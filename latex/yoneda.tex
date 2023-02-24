@@ -1,0 +1,746 @@
+\documentclass[journal]{journal}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath, amsthm, amsfonts, amssymb}
+\usepackage{mathrsfs}
+\usepackage{bbm} 
+\usepackage{bm} 
+
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\usepackage{url}
+
+\usepackage{nameref}
+
+\usepackage{makeidx}
+\makeindex
+
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+
+\newcommand{\bcirc}{\bm{\circ}}
+
+\newcommand{\defn}{\subsection{Definition}\begingroup\rm}
+\newcommand{\ass}{\subsubsection{Assumptions}\begingroup\rm}
+\newcommand{\laws}{\subsubsection{Laws}\begingroup\rm}
+\renewcommand{\not}{\subsubsection{Notation}\begingroup\rm}
+\newcommand{\subdefns}{\subsubsection{Definitions}\begingroup\rm}
+\newcommand{\prop}{\subsubsection{Property}\begingroup\rm}
+\newcommand{\prf}{\subsection{Proof}\begingroup\rm}
+\newcommand{\lemm}{\subsection{Lemma}\begingroup\rm}
+\newcommand{\corr}{\subsection{Corollary}\begingroup\rm}
+
+\def\edefn{\endgroup\par\pagebreak[2]\addvspace{\medskipamount}}
+\let\eass=\edefn
+\let\elaws=\edefn
+\let\enot=\edefn
+\let\esubdefns=\edefn
+\let\eprop=\edefn
+\let\elemm=\edefn
+\let\ecorr=\edefn
+\let\eprf=\edefn
+
+\newcounter{lister}
+
+\newenvironment{labeledlist}[1]
+{\begin{list}{{\rm#1\,--\,\arabic{lister}}}{\usecounter{lister}
+\settowidth{\labelwidth}{#1--1}
+\leftmargin\labelwidth \advance\leftmargin by \labelsep
+}}
+{\end{list}}
+
+\def\blist#1{\begin{labeledlist}{#1}\setcounter{lister}{-1}}
+
+\newcommand{\elist}{\end{labeledlist}}
+
+\newcommand{\arrow}[2]{#1\!\!\rightarrow\!\!#2}
+\newcommand{\arrowdown}[2]{#1 \rightarrow #2}
+
+\newcommand{\function}[2]{\mbox{\bf #1} \!\!\Rightarrow\!\! \mbox{\bf #2}}
+
+\newcommand{\nodefunction}[2]{#1 \!\!\Rightarrow\!\! #2}
+
+\newcommand{\graphmorphism}[2]{#1 \rightarrow #2}
+\newcommand{\nodemorphism}[2]{#1 \rightarrow #2}
+\newcommand{\arrowmorphism}[2]{#1 \rightarrow #2}
+
+\newcommand{\arrowcomposition}[2]{#1 \rightarrow #2}
+\newcommand{\arrowunit}[2]{#1 \rightarrow #2}
+
+\newcommand{\idarrow}[3]{#2 \!\rightarrow_{#1}\! #3}
+
+\newcommand{\functor}[2]{#1 \rightarrow #2}
+
+\newcommand{\transformation}[2]{#1 \rightarrow #2}
+
+%\newcommand{\YF}[1]{\mbox{$Y$}^{\mbox{\scriptsize{$#1$}}}\!}
+\newcommand{\YF}{\mbox{\bf YF}}
+\newcommand{\yf}{\mbox{\bf yf}}
+
+% \newcommand{\yf}[1]{\mbox{$y$}^{\mbox{\scriptsize{$#1$}}}}
+
+\newcommand{\Arr}{\mbox{Arr}}
+
+\newcommand{\FTA}{\mbox{{\bf F}2{\bf A}}}
+\newcommand{\fta}{\mbox{{\normalsize {\bf f}}{\small 2}{\normalsize {\bf a}}}}
+\newcommand{\cfta}[1]{\mbox{{\normalsize {\bf f}}{\small 2}{\normalsize {\bf a}}}_{#1}}
+
+\newcommand{\YA}[1]{\mbox{Y\!}_{\mbox{\scriptsize{$#1$}}}\!}
+\newcommand{\ya}[1]{\mbox{y\!}_{\mbox{\scriptsize{$#1$}}}}
+\newcommand{\sya}[1]{\mbox{\scriptsize y}_{\mbox{\scriptsize{$#1$}}}}
+
+\newcommand{\Z}{\mbox{\bf Z}}
+\newcommand{\Y}{\mbox{\bf Y}}
+\newcommand{\X}{\mbox{\bf X}}
+
+\newcommand{\U}{\mbox{\bf U}}
+
+\newcommand{\I}{\mbox{\bf I}}
+
+\newcommand{\z}{\mbox{\bf z}}
+\newcommand{\y}{\mbox{\bf y}}
+\newcommand{\x}{\mbox{\bf x}}
+
+\renewcommand{\u}{\mbox{\bf u}}
+
+\renewcommand{\i}{\mbox{\bf i}}
+
+\newcommand{\caf}{\mbox{\bf caf}}
+
+\newcommand{\si}{\mbox{\bf {\scriptsize i}}}
+
+\newcommand{\Set}{\mbox{\bf Set}}
+\newcommand{\Type}{\mbox{\bf Type}}
+\newcommand{\Fun}{\mbox{\bf Fun}}
+
+\hyphenation{}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\title{
+A pointfree Yoneda lemma\\
+for\\
+endofunctors\\
+of\\
+functional categories
+}
+
+\author{
+Luc Duponcheel, \\ 
+~\IEEEmembership{
+mathematician and programmer, gardener and cyclist.
+}
+}
+
+\thanks{
+Luc Duponcheel is a retired mathematician and programmer. 
+Nowadays, besides building a bridge between mathematics and programming,
+he raises vegetables in his greenhouse and cycles with his wife all over Europe. 
+}
+
+\maketitle
+
+\thispagestyle{empty}
+
+\begin{abstract}
+
+Category theory~\cite{book:MacLaneSaunders} is used in almost all areas of mathematics, and in some areas of
+programming, more precisely pure effectful functional programming.
+
+In mathematics, the Yoneda lemma suggests that instead of studying a category, one should study the category of all
+functors from that category to $\Set$, the category whose objects are sets, and whose morphisms are functions. The lemma
+uses only three concepts: category, functor and natural transformation. The lemma is pointful, it deals with elements of
+sets.
+
+In pure functional programming, one can write domain specific language libraries that model programming. Those libraries
+model programs as morphisms of categories whose objects are types. Those categories, we call them functional categories,
+have some specific properties. First, there exists a functor from $\Set$ to those categories that is the identity on
+objects. Using that functor effectfree functions can be used as programs. Of course there may also exist effectful
+programs. Second, programs themselves form a type.
+
+This paper is a contribution to bridging the gap between mathematics and programming using the set-type, resp.
+function-program correspondence. Category theory, almost inevitably, plays a fundamental role in doing
+so~\cite{book:MacLaneSaunders}.
+
+Functors from a functional category to $\Set$ can be composed with the functor above from $\Set$ to that functional
+category to obtain an endofunctor of that functional category. It is natural to try to formulate and prove a Yoneda
+lemma for such endofunctors. It is challenging to minimize the amount of concepts involved and to make both the
+formulation and the proof of the lemma pointfree, only dealing with morphisms of that functional category.
+
+This paper is the result of advancing insights, obained by writing a library in {\tt Scala}~\cite{book:Scala}. Any
+programming language with a sufficiently powerful type system, for example {\tt Haskell}~\cite{book:Haskell}, could have
+been used instead. Most notably its type system has to support higher kinded type classes~\cite{book:Pierce}.
+
+\end{abstract}
+
+\setcounter{section}{0}
+
+\section{Introduction}\label{sec:introduction}
+
+\subsection{Terminology and font conventions}\label{subsec:terminologynotationalconventions}
+
+We use computing science category theory terminology. For example, 
+\begin{itemize}
+\item we use {\em node}\index{terminology!node} resp.\! {\em arrow} for {\em object} resp.\! {\em morphism},
+\item we use {\em source}\index{terminology!source} resp.\! {\em target}\index{terminology!target} for {\em domain}
+resp.\! {\em codomain}.     
+\end{itemize}
+
+We use the following font conventions
+\begin{itemize}
+\item for category specifications we use math font, like $C$, and $Z$, $Y$, \ldots\, , for nodes resp.
+$\arrow{z}{y}$ \ldots\, , for arrows,
+\item for category implementations, simply called categories, we use boldface font, like $\Set$, for the category of
+sets, and $\Z$, $\Y$, \ldots\, , for sets resp. $\function{z}{y}$ \ldots\, , for functions.
+\end{itemize}
+
+\subsection{Notational assumptions and conventions}\label{subsec:notationalassumptionsandconvention}
+
+We use notational assumptions for arrows of $C$.
+\begin{itemize}
+\item we assume that $\arrow{z}{y}$ \ldots\, , are names of arrows with source node $Z$ and target node $Y$,
+\item we assume that $\arrow{z}{z}$ \ldots\, , are names of identity arrows with source node $Z$ and target node $Z$.           
+\end{itemize} 
+
+We use similar notational assumptions for functions of $\Set$.
+
+Moreover,
+\begin{itemize}       
+\item we assume that {\bf z}, resp.\! {\bf y} \ldots\, , are names of elements of sets $\Z$, resp.\! $\Y$ \ldots\, .   
+\end{itemize} 
+
+We use notational conventions.  
+\begin{itemize}
+\item letters A and a, resp.\! F and f, resp.\! C and c, resp.\! Y and y refer to
+"arrow", resp.\! "function", resp.\! "constant", resp.\! "Yoneda".
+\end{itemize}
+
+Function literals $\mbox{\bf z}\!\!\mapsto\!\!\mbox{\bf e}(\mbox{\bf z})$, where $\mbox{\bf e}(\mbox{\bf z})$ is an
+expression containing $\mbox{\bf z}$ once, are, just like is often done when using programmatic notation, simply denoted 
+$\mbox{\bf e}(\mbox{\bf \_})$.
+
+\section{Preliminaries}\label{sec:preliminaries}
+
+\setcounter{subsection}{0}
+
+\defn\label{graph specification}
+The {\em graph specification}\index{graph specification} $G$ declares
+\blist{$G_{dec}$}
+\item $G_0$, {\em nodes}\index{graph specification!node}, $Z$, $Y$, \ldots\, ,
+\item $G_1$, {\em arrows}\index{graph specification!arrow}, $\arrow{z}{y}$, \ldots\, ,
+\item $G_2$, {\em composable arrows}\index{graph specification!composabale arrows}
+$\arrow{z}{y}$ and $\arrow{y}{x}$.
+\elist
+\edefn
+
+Nodes do not need to form a set. $Arr_{G}(Z,Y)$, arrows with source node $Z$ and target node $Y$, form a set.
+
+\not
+$Arr_{G}(Z,Y)$ is also simply denoted $Arr(Z,Y)$.
+\enot
+
+\ass
+{\em When using names like $\arrow{z}{y}$ we assume that $\arrow{z}{y} \in Arr(Z,Y)$}.
+\eass
+
+\defn\label{endoarrow}
+An {\em endoarrow}\index{graph specification!endoarrow} is an arrow in $Arr(Z,Z)$.
+\edefn
+
+\defn\label{set graph}
+The $\Set$ graph\index{set graph} defines
+\blist{$\Set_{def}$}
+\item $\Set_0$, {\em sets}\index{set graph!set}, $\Z$, $\Y$, \ldots\, ,
+\item $\Set_1$, {\em functions}\index{set graph!function}, $\function{z}{y}$, \ldots\, . 
+\elist
+\edefn
+
+Sets do not form a set. $\Fun(\Z,\Y)$, functions with source set $\Z$ and target set $\Y$ form a set.
+
+\ass
+{\em When using names like} $\function{z}{y}$ {\em we assume that} $\function{z}{y} \in \Fun(\Z,\Y)$.
+\eass
+
+\defn\label{graph morphism specification}
+The {\em graph morphism specification}\index{graph morphism specification} $M: \graphmorphism{G}{H}$ declares
+\blist{$M_{dec}$}
+\item $M_0: \nodemorphism{G_0}{H_0}$,
+\item $M_1: \arrowmorphism{G_1}{H_1}$.
+\elist
+\edefn
+
+$M_0$ does not need to be a function. 
+
+\not
+Nodes $M_0(Z)$ are denoted $m(Z)$. Arrows $M_1(\arrow{z}{y})$ are denoted $m(\arrow{z}{y})$. 
+\enot
+
+\laws\label{graph morphism laws}
+\blist{$M_{law}$}
+\item if $\arrow{z}{y} \in Arr_{G}(Z,Y)$,\\
+      then $m(\arrow{z}{y}) \in Arr_{H}(m(Z),m(Y))$.
+\elist
+\elaws
+
+All $m: Arr_{G}(Z,Y) \rightarrow Arr_{H}(m(Z),m(Y))$ are functions.
+
+\not
+Arrows $m(\arrow{z}{y})$ are also denoted $\arrow{m(z)}{m(y)}$.
+\enot
+
+\defn\label{category specification}
+The {\em category specification}\index{category specification} $C$ extends the graph specification. It delares
+\blist{$C_{dec}$}
+\item $c: \arrowcomposition{C_2}{C_1}$,
+\item $u: \arrowunit{C_0}{C_1}$.
+\elist
+\edefn
+
+$c$ is called {\em composition}\index{category specification!composition}.
+$u$ is called {\em unit}\index{category specification!unit}.
+
+\not
+If $\arrow{z}{y}$ and $\arrow{y}{x}$ are composable arrows, then the arrow
+$c(\arrow{z}{y},\arrow{y}{x})$ is denoted ${\arrow{y}{x}} \circ_{c} \arrow{z}{y}$, or, simply,
+${\arrow{y}{x}} \circ \arrow{z}{y}$ and is called the
+{\em composite arrow}\index{category specification!composite arrow} of $\arrow{z}{y}$ and $\arrow{y}{x}$, or, simply,
+the {\em composite} of $\arrow{z}{y}$ and $\arrow{y}{x}$. If $Z$ is a node, then the arrow $u(Z)$ is denoted
+$\idarrow{c}{z}{z}$, or, simply, $\arrow{z}{z}$ and is called the
+{\em identity arrow}\index{category specification!identity arrow} of $Z$, or, simply, the {\em identity} of $Z$. 
+\enot
+
+\ass
+{\em When using names like} $\idarrow{c}{z}{z}$ {\em we assume that} $\idarrow{c}{z}{z}$ {\em is the identity of} $Z$.
+\eass
+
+\laws\label{category laws}
+\blist{$C_{law}$}
+\item The source of ${\arrow{y}{x}} \circ_{c} \arrow{z}{y}$ is the source of $\arrow{z}{y}$,
+\item The target of ${\arrow{y}{x}} \circ_{c} \arrow{z}{y}$ is the target of $\arrow{y}{x}$,
+\item The source resp.\! target of $\arrow{y}{y}$ is $Y$,
+\item The source resp.\! target of $\arrow{z}{z}$ is $Z$,
+\item $(\arrow{x}{w} \circ_{c} \arrow{y}{x}) \circ_{c} \arrow{z}{y} = \arrow{x}{w} \circ_{c} (\arrow{y}{x}) \circ_{c} \arrow{z}{y})$
+      ({\em associativity law}\index{category specification!associativity law}),
+\item $\arrow{y}{y} \circ_{c} \arrow{z}{y} = \arrow{z}{y}$
+      ({\em left identity law}\index{category specification!left identity law}),\label{category left identity law}      
+\item $\arrow{z}{y} \circ_{c} \arrow{z}{z} = \arrow{z}{y}$
+      ({\em right identity law}\index{category specification!right identity law}).\label{category right identity law}
+\elist
+\elaws
+
+\defn\label{functor specification}
+The {\em functor specification}\index{functor specification} $F: \functor{C}{D}$, where $C$ and $D$ are categories,
+extends the graph morphism specification.
+\edefn
+
+\laws\label{functor laws}
+\blist{$F_{law}$}
+\item $f(\arrow{y}{x} \circ_{c} \arrow{z}{y}) = f(\arrow{y}{x}) \circ_{d} f(\arrow{z}{y})$ \\
+      ({\em composition law}\index{functor specification!composition law}),
+\item $f(\idarrow{c}{z}{z}) = \idarrow{d}{z}{z}$ 
+      ({\em identity law}\index{functor specification!identity law}).
+\elist
+\elaws
+
+\defn\label{endofunctor}
+An {\em endofunctor}\index{functor specification!endofunctor} is a functor $F: \functor{C}{C}$.
+\edefn
+
+\defn\label{functor composition}
+Given
+\begin{itemize}
+\item categories $C$, $D$ and $E$,
+\item functors $F: \functor{C}{D}$ and $G: \functor{D}{E}$,  
+\end{itemize}      
+the {\em composed functor}\index{functor specification!composed functor} $G \bcirc F: \functor{C}{E}$ is defined as
+follows:
+\blist{$(G \bcirc F)_{def}$}
+\item $(g \bcirc f)(Z) = g(f(Z))$,
+\item $(g \bcirc f)(\arrow{z}{y}) = g(f(\arrow{z}{y}))$.
+\elist
+\edefn
+
+\defn\label{identity functor}
+The {\em identity functor}\index{functor specification!identity functor} $\I: \functor{C}{C}$ of category $C$ is defined
+as follows
+\blist{$\I_{def}$}
+\item $\i(Z) = Z$,
+\item $\i(\arrow{z}{y}) = \arrow{z}{y}$.
+\elist
+\edefn
+
+\defn\label{Yoneda functor}
+The {\em Yoneda functor}\index{Yoneda functor} $\YF\!_{Z}: \functor{C}{\Set}$ for node $Z$ of category $C$ is defined as
+follows
+\blist{$\YF\!_{Z}$}
+\item $\yf_{z}(Y) = Arr(Z, Y)$,
+\item $\yf_{z}(\arrow{y}{x}) = \arrow{y}{x} \circ \_$\, .
+\elist
+Note that $\yf_{z}(\arrow{y}{x})(\arrow{z}{y}) = \arrow{y}{x} \circ \arrow{z}{y}$.
+\edefn
+
+\defn\label{natural transformation specification}
+The {\em natural transformation specification}\index{natural transformation specification}
+$\alpha: \transformation{F}{G}$, where $F: \functor{C}{D}$ and $G: \functor{C}{D}$ are functors, declares
+\blist{$\alpha_{dec}$}
+\item arrows $\alpha_{z} \in Arr_{D}(f(Z),g(Z))$.
+\elist
+\edefn
+
+\laws\label{natural transformation laws}
+\blist{$\alpha_{law}$}
+\item $\alpha_{y} \circ_{d} f(\arrow{z}{y}) = g(\arrow{z}{y}) \circ_{d} \alpha_{z}$
+      ({\em commutativity law}\index{natural transformation specification!commutativity law}).\label{natural transformation commutativity law}
+\elist
+\elaws
+
+\not
+$\alpha_{z}$ is also, simply, denoted $\alpha$.
+\enot
+
+\defn\label{natural transformation composition}
+Given
+\begin{itemize}
+\item a category $C$,
+\item endofunctors, $F: \functor{C}{C}$, $G: \functor{C}{C}$, $H: \functor{C}{C}$,
+\item natural transformations $\alpha: \transformation{F}{G}$ and $\beta: \transformation{H}{K}$,
+\end{itemize} 
+\edefn
+
+the {\em composed natural transformation}\index{natural transformation specification!composed natural transformation}
+$\beta \bcirc \alpha: \transformation{C}{C}$ is defined as follows:
+\blist{$(\beta \bcirc \alpha)_{def}$}
+\item $(\beta \bcirc \alpha)_{z} = \beta_{z} \circ \alpha_{z}$.
+\elist
+
+\defn\label{functor and natural transformation composition}
+Given
+\begin{itemize}
+\item categories $C$, $D$ and $E$,
+\item functors, $F: \functor{C}{D}$, $G: \functor{C}{D}$, $H: \functor{D}{E}$ and $K: \functor{D}{E}$,
+\item natural transformations $\alpha: \transformation{F}{G}$ and $\beta: \transformation{H}{K}$,
+\end{itemize} 
+
+natural transformation $\beta\!F: \transformation{H \bcirc F}{K \bcirc F}$ is defined as follows: 
+\blist{($\beta\!F)_{def}$}
+\item $(\beta\!F)_{z} = \beta_{f(z)}$, and, 
+\elist
+
+natural transformation $H\!\alpha: \transformation{H \bcirc F}{H \bcirc G}$ is defined as follows:
+\blist{($H\!\alpha)_{def}$}
+\item $(H\!\alpha)_{z} = h(\alpha_{z})$.
+\elist
+\edefn
+
+\defn\label{pre-triple specification} 
+The {\em pre-triple specification}\index{pre-triple specification} $\pi\tau = (PT,\eta)$ for category $C$ declares
+\blist{$\pi\tau_{dec}$}
+\item an endofunctor $PT: \functor{C}{C}$,
+\item a natural transformation $\eta: \transformation{\I}{PT}$.
+\elist
+$\eta$ is called {\em unit}\index{pre-triple specification!unit}.
+\edefn
+
+\defn\label{triple specification} 
+The {\em triple specification}\index{triple specification} $\tau = (T,\mu,\eta)$ for category $C$ declares
+\blist{$\tau_{dec}$}
+\item a pre-triple $(T,\eta)$
+\item a natural transformation $\mu: \transformation{T \bcirc T}{T}$.
+\elist
+$\mu$ is called {\em multiplication}\index{triple specification!multiplication}.
+\edefn
+
+Note that $\I = T^{0}$, $T = T^{1}$ and $T \bcirc T = T^{2}$.
+
+\laws\label{triple laws}
+\blist{$\tau_{law}$}
+\item $\mu_{z} \circ_{c} (\eta T)_{z} = \arrow{t(z)}{t(z)}$
+({\em left identity law}\index{triple specification!left identity law}),
+\item $\mu_{z} \circ_{c} (T \eta)_{z} = \arrow{t(z)}{t(z)}$
+({\em right identity law}\index{triple specification!right identity law}),
+\item $\mu_{z} \circ_{c} (T \mu)_{z} = \mu_{z} \circ_{c} (\mu T)_{z}$
+({\em multiplication law}\index{triple specification!multiplication law}).
+\elist
+\elaws
+
+\section{Content}\label{sec:content}
+
+\setcounter{subsection}{0}
+
+\defn\label{pre-functional category specification}
+The {\em pre-functional category specification}\index{pre-functional category specification} $P\!F\!C$, whose nodes are
+the nodes of $\Set$, extends the category specification. 
+
+\not
+Although nodes of $P\!F\!C$ are sets, we will, by abuse of notation, denote them as nodes, $Z$, $Y$, \ldots\, \,\,
+(and the same for their elements, $z$, $y$, \ldots\, ).
+\enot
+
+It declares
+\blist{$P\!F\!C_{dec}$}
+\item a functor $\FTA$ from $\Set$ to $P\!F\!C$ that is the identity on nodes.
+\elist
+
+We will use the following definitions
+\blist{$P\!F\!C_{def}$}
+\item $\Y\!_{Z}$, the {\em Yoneda endofunctor for $Z$}\index{pre-functional category specification!Yoneda endofunctor}, is 
+      $\FTA \bcirc \YF\!_{Z}$,
+\item $\caf \in \Fun(Y,Arr(Z, Y))$ is $y \mapsto \fta(z \mapsto y)$\index{pre-functional category specification!constant arrow function},
+\item $\eta_{z} \in Arr(\I(Z),\Y\!_{U}(Z))$ is $\fta(\caf)$, where $U$ is a terminal node (singleton set) of the category $\Set$.
+\elist
+
+Note that $\fta$ stands for function to arrow, and $\caf$ stands for constant arrow function.
+
+From a functional programming viewpoint, it is instructive to think about arrows $\fta(\nodefunction{z}{y})$ as {\em pure
+functions}\index{pre-functional category specification!pure function} (a.k.a {\em effectfree programs}) and other
+arrows as {\em effectful programs}\index{pre-functional category specification!effectful program} (a.k.a. 
+{\em impure functions}).
+\edefn
+
+\not
+$\fta$, mapping functions of $\Fun(Z, Y)$ to arrows of $Arr(Z, Y)$ for node $Z$, is, when, in our opinion, instructive,
+explicitly denoted $\cfta{y}$.
+\enot
+
+\laws\label{pre-functional category laws}
+\blist{$P\!F\!C_{law}$}
+\item $\eta: \I \rightarrow \Y\!_{U}$ is a {\em natural} transformation, in other words, $(\Y\!_{U},\eta)$ is a 
+      pre-triple\index{pre-functional category specification!$(\Y\!_{U},\eta)$ pre-triple}.
+\item $\caf(\arrow{u}{z}) = \eta \circ \arrow{u}{z}$
+      ({\em $\eta$ law}\index{pre-functional category specification!$\eta$ law})
+\elist
+\elaws
+
+\prop
+The following property can easily be proved
+\blist{app}
+\item $\fta(\nodefunction{z}{y}) \circ \caf(z) = \caf(\nodefunction{z}{y}(z))$ \\
+      ({\em pointfree application}\index{pre-functional category specification!pointfree application}).\label{pointfree application property}
+\elist
+\eprop
+
+\prop
+The following property can easily be proved
+\blist{$\Y$}
+\item $\y\!_z(\arrow{y}{x}) \circ \caf(\arrow{z}{y}) = \caf(\arrow{y}{x} \circ \arrow{z}{y})$ \\
+      ({\em pointfree Yoneda}\index{pre-functional category specification!pointfree Yoneda}).\label{pointfree Yoneda property}
+\elist
+\eprop
+
+\subsection{Pointfree Yoneda lemma for pre-functional categories}
+
+We are ready now for our pointfree Yoneda lemma for endofunctors of pre-functional categories.
+
+\lemm\label{Pointfree Yoneda lemma for pre-functional categories}
+
+For all pre-functional categories $P\!F\!C$, nodes $Z$ of $P\!F\!C$, and endofunctors $G$ of $P\!F\!C$, natural
+transformations $\eta G \bcirc \beta: \Y\!_{Z} \rightarrow \Y\!_{U} \bcirc G$, for natural tranformations
+$\beta: \Y\!_{Z} \rightarrow G$, correspond with arrows of $(\y\!_{u} \!\bcirc g)(Z)$.
+
+On the one hand, if $\beta: \Y\!_{Z} \rightarrow G$ is a natural transformation, and
+\begin{itemize} 
+\item $\arrow{u}{g(z)} \in (\y\!_{u} \!\bcirc g)(Z)$ is defined as $\beta \circ \caf(\arrow{z}{z})$,
+\end{itemize} 
+then, $\gamma: \Y\!_{Z} \rightarrow \Y\!_{U} \!\bcirc G$, defined as
+$\gamma = \fta(g(\_) \circ \arrow{u}{g(z)})$, is equal to
+$\eta G \bcirc \beta$. 
+
+On the other hand, if $\arrow{u}{g(z)} \in (\y\!_{u} \!\bcirc g)(Z)$, and
+\begin{itemize}
+\item $\gamma: \Y\!_{Z} \rightarrow \Y\!_{U} \!\bcirc G$ is defined as
+$\gamma = \fta(g(\_) \circ \arrow{u}{g(z)})$,
+\end{itemize}
+then $\gamma$, is a natural transformation.
+\elemm
+
+Both statements hold modulo composing with an arrow $\caf(\arrow{z}{y})$.
+
+\defn\label{functional category specification}
+The {\em functional category specification}\index{functional category specification} $F\!C$ extends the pre-functional
+category specification. It declares
+\blist{$F\!C_{dec}$}
+\item natural transformation $\mu: (\Y\!_{U} \!\bcirc \Y\!_{U}) \rightarrow \Y\!_{U}$.
+\elist
+\edefn
+
+\laws\label{functional category laws}
+\blist{$F\!C_{law}$}
+\item $(\Y\!_{U}\!,\mu, \eta)$ is a triple\index{functional category specification!$(\Y\!_{U},\mu, \eta)$ triple}.
+\elist
+\elaws
+
+\prop\label{functional category mu property}
+The following property can easily be proved
+\blist{$\mu_{prop}$}
+\item $\mu \circ \caf(\arrow{u}{(\arrow{u}{z})}) = \arrow{u}{(\arrow{u}{z})}$
+      ({\em $\mu$ property}\index{functional category specification!$\mu$ property})
+\elist 
+\eprop
+
+\subsection{Pointfree Yoneda lemma for functional categories}
+
+We are ready now for our pointfree Yoneda lemma for endofunctors of functional categories.
+
+\lemm\label{Pointfree Yoneda lemma for functional categories}
+For all functional categories $F\!C$, nodes $Z$ of $F\!C$, and endofunctors $G$ of $F\!C$, natural transformations
+$\beta: \Y\!_{Z} \rightarrow \Y\!_{U} \bcirc G$ correspond with arrows of $(\y\!_{u} \!\bcirc \y\!_{u} \!\bcirc g)(Z)$. 
+
+On the one hand, if $\beta: \Y\!_{Z} \rightarrow \Y\!_{U} \bcirc G$ is a natural transformation, and
+\begin{itemize} 
+\item $\arrow{u}{(\arrow{u}{g(z)})} \in (\y\!_{u} \!\bcirc \y\!_{u} \!\bcirc g)(Z)$ is defined as 
+      $\beta \circ \caf(\arrow{z}{z})$,
+\end{itemize} 
+then, $\gamma: \Y\!_{Z} \,\rightarrow \Y\!_{U} \bcirc G$, defined as \\ 
+$\gamma = \mu G \circ \fta((\y\!_{u} \!\bcirc g)(\_) \circ \arrow{u}{(\arrow{u}{g(z)})})$,
+is equal to $\beta$. 
+
+On the other hand, if $\arrow{u}{(\arrow{u}{g(z)})} \in (\y\!_{u} \bcirc \y\!_{u} \!\bcirc g)(Z)$, and
+\begin{itemize}
+\item $\gamma: \Y\!_{Z} \,\rightarrow \Y\!_{U} \bcirc G$ is defined as \\
+$\gamma = \mu G \circ \fta((\y\!_{u} \!\bcirc g)(\_) \circ \arrow{u}{(\arrow{u}{g(z)})})$,
+\end{itemize}
+then $\gamma$, is a natural transformation.
+\elemm
+
+Both statements hold modulo composing with an arrow $\caf(\arrow{z}{y})$.
+
+\appendices
+
+\section{Proof of first lemma}
+
+\prf
+\setcounter{equation}{0}
+On the one hand, if $\arrow{z}{y} \in Arr(Z,Y)$, then
+\begin{eqnarray*}
+&   & \!\!\!\!\!\!\!\!\!\!\!\!\!\!\!\! \eta G \circ \beta \circ \caf(\arrow{z}{y}) \\
+&   & \mbox{right identity law for } Arr \\      
+& = & \eta G \circ \beta \circ \caf(\arrow{z}{y} \circ \arrow{z}{z}) \\
+&   & \mbox{pointfree Yoneda law for } (\Y\!_U, \eta) \\      
+& = & \eta G \circ \beta \circ \y\!_{z}(\arrow{z}{y}) \circ \caf(\arrow{z}{z}) \\
+&   & \mbox{natural transformation law for } \eta G \circ \beta \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \eta G \circ \beta \circ \caf(\arrow{z}{z}) \\
+&   & \mbox{definition  } \arrow{u}{g(z)} \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \eta G \circ \arrow{u}{g(z)} \\
+&   & \eta \mbox{ law for } (\Y\!_U, \eta) \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \caf(\arrow{u}{g(z)}) \\
+&   & \mbox{function composition for } \y\!_{u} \mbox{ and } g \\      
+& = & \y\!_{u}(g(\arrow{z}{y})) \circ \caf(\arrow{u}{g(z)}) \\
+&   & \mbox{pointfree Yoneda law for } (\Y\!_U, \eta) \\      
+& = & \caf(g(\arrow{z}{y}) \circ \arrow{u}{g(z)}) \\
+&   & \mbox{pointfree application law for } (\Y\!_U, \eta) \\      
+& = & \cfta{y}(g(\_) \circ \arrow{u}{g(z)}) \circ \caf(\arrow{z}{y}) \\
+&   & \mbox{definition } \gamma \\      
+& = & \gamma \circ \caf(\arrow{z}{y}) 
+\end{eqnarray*}
+\vspace{6pt}
+\setcounter{equation}{0}
+
+On the other hand, if $\arrow{z}{y} \in Arr(Z,Y)$, then
+\begin{eqnarray*}
+&   & \!\!\!\!\!\!\!\!\!\!\!\!\!\!\!\! (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ \gamma \circ \caf(\arrow{z}{y}) \\
+&   & \mbox{definition } \gamma \\
+& = & (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ \cfta{y}(g(\_) \circ \arrow{u}{g(z)}) \circ \caf(\arrow{z}{y}) \\
+&   & \mbox{pointfree application law for } (\Y\!_U, \eta) \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ \caf(g(\arrow{z}{y}) \circ \arrow{u}{g(z)}) \\
+&   & \mbox{function composition for } \y\!_{u} \mbox{ and } g \\      
+& = & \y\!_{u}(g(\arrow{y}{x})) \circ \caf(g(\arrow{z}{y}) \circ \arrow{u}{g(z)}) \\
+&   & \mbox{pointfree Yoneda law for } (\Y\!_U, \eta) \\      
+& = & \caf(g(\arrow{y}{x}) \circ g(\arrow{z}{y}) \circ \arrow{u}{g(z)}) \\
+&   & \mbox{composition law for } g \\
+& = & \caf(g(\arrow{y}{x} \circ \arrow{z}{y}) \circ \arrow{u}{g(z)}) \\
+&   & \mbox{pointfree application law for } (\Y\!_U, \eta) \\      
+& = & \cfta{x}(g(\_) \circ \arrow{u}{g(z)}) \circ \caf(\arrow{y}{x} \circ \arrow{z}{y}) \\
+&   & \mbox{pointfree Yoneda law for } (\Y\!_U, \eta) \\      
+& = & \cfta{x}(g(\_) \circ \arrow{u}{g(z)}) \circ \y\!_{z}(\arrow{y}{x}) \circ ca(\arrow{z}{y}) \\
+&   & \mbox{definition } \gamma \\
+& = & \gamma \circ \y\!_{z}(\arrow{y}{x}) \circ \caf(\arrow{z}{y})
+\end{eqnarray*}
+\eprf
+
+\newpage
+
+\section{Proof of second lemma}
+
+\prf
+On the one hand, if $\arrow{z}{y} \in Arr(Z,Y)$, then
+\setcounter{equation}{0}
+\begin{eqnarray*}
+&   & \!\!\!\!\!\!\!\!\!\!\!\!\!\!\!\! \beta \circ \caf(\arrow{z}{y}) \\      
+&   & \mbox{right identity law for } Arr \\      
+& = & \beta \circ \caf(\arrow{z}{y} \circ \arrow{z}{z}) \\   
+&   & \mbox{pointfree Yoneda law for } (\Y\!_U, \eta) \\      
+& = & \beta \circ \y\!_{z}(\arrow{z}{y}) \circ \caf(\arrow{z}{z}) \\      
+&   & \mbox{natural transformation law for } \beta \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \beta \circ \caf(\arrow{z}{z}) \\      
+&   & \mbox{definition } \arrow{u}{(\arrow{u}{g(z)})} \\
+& = & (\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})} \\      
+&   & \mu \mbox{ property for } (\Y\!_U, \mu, \eta) \\      
+& = & \mu G \circ \caf((\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})}) \\      
+&   & \mbox{pointfree application law for } (\Y\!_U, \eta) \\      
+& = & \mu G \circ \cfta{y}((\y\!_{u} \!\bcirc g)(\_) \circ \arrow{u}{(\arrow{u}{g(z)})}) \circ ca(\arrow{z}{y}) \\      
+&   & \mbox{definition } \gamma \\
+& = & \gamma \circ \caf(\arrow{z}{y}) 
+\end{eqnarray*}
+\vspace{6pt}
+\setcounter{equation}{0}
+
+On the other hand, if $\arrow{z}{y} \in Arr(Z,Y)$, then
+\begin{eqnarray*}
+&   & \!\!\!\!\!\!\!\!\!\!\!\!\!\!\!\! (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ \gamma \circ \caf(\arrow{z}{y}) \\
+&   & \mbox{definition } \gamma \\
+& = & (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ \mu G \circ \cfta{y}((\y\!_{u} \!\bcirc g)(\_) \circ \arrow{u}{(\arrow{u}{g(z)})}) \circ \caf(\arrow{z}{y}) \\
+&   & \mbox{pointfree application law for } (\Y\!_U, \eta) \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ \mu G \circ \caf((\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})}) \\
+&   & \mu \mbox{ property for } (\Y\!_U, \mu, \eta) \\      
+& = & (\y\!_{u} \!\bcirc g)(\arrow{y}{x}) \circ (\y\!_{u} \!\bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})} \\
+&   & \mbox{composition law for } \y\!_{u} \!\bcirc g \\
+& = & (\y\!_{u} \!\bcirc g)(\arrow{y}{x} \circ \arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})} \\  
+&   & \mu \mbox{ property for } (\Y\!_U, \mu, \eta) \\      
+& = & \mu G \circ \caf((\y\!_{u} \!\bcirc g)(\arrow{y}{x} \circ \arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})}) \\  
+&   & \mbox{pointfree application law for } (\Y\!_U, \eta) \\      
+& = & \mu G \circ \cfta{x}((\y\!_{u} \!\bcirc g)(\_) \circ \arrow{u}{(\arrow{u}{g(z)})}) \circ \caf(\arrow{y}{x} \circ \arrow{z}{y}) \\  
+&   & \mbox{definition } \gamma \\
+& = & \gamma \circ \caf(\arrow{y}{x} \circ \arrow{z}{y}) \\  
+&   & \mbox{pointfree Yoneda law for } (\Y\!_U, \eta) \\      
+& = & \gamma \circ \y\!_{z}(\arrow{y}{x}) \circ \caf(\arrow{z}{y}) 
+\end{eqnarray*}
+\eprf
+
+\begin{thebibliography}{1}
+
+\bibitem{book:BarrWells}
+M.~Barr and Ch. Wells, \emph{Category theory for computing science}, 2nd~ed.\hskip 1em plus
+0.5em minus 0.4em\relax Prentice-Hall International Series in Computer Science, 1999.
+
+\bibitem{book:MacLaneSaunders}
+Mac Lane, Saunders, \emph{Categories for the Working Mathematician}, vol-5, 2nd~ed.\hskip 1em plus
+0.5em minus 0.4em\relax Springer-Verlag, 1998.
+
+\bibitem{book:Pierce}
+Benjamin C. Pierce, \emph{Types and Programming Languages}.\hskip 1em plus
+0.5em minus 0.4em\relax MIT Press, 2002.
+
+\bibitem{book:Haskell}
+Simon Peyton Jones, \emph{Haskell 98 language and libraries: the Revised Report}.\hskip 1em plus
+0.5em minus 0.4em\relax Cambridge University Press, 2003.
+
+\bibitem{book:Scala}
+Martin Odersky, Lex Spoon, Bill Venners, and Frank Sommers, \emph{Programming in Scala}, 5th~ed.\hskip 1em plus
+0.5em minus 0.4em\relax Artima, 2021.
+  
+\end{thebibliography}
+
+\vspace{-600pt}
+
+\begin{IEEEbiographynophoto}{Luc Duponcheel}
+has worked as a mathematics researcher at various universities of Belgium and The Netherlands.
+Later on he worked as an international Java programming instructor for Sun Microsystems.
+At the end of his career he worked as an independent Scala software consultant.
+All his life his end-of-day hobby was to build a bridge between mathematics and programming.
+\end{IEEEbiographynophoto}
+
+\end{document}
+

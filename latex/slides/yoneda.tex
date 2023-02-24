@@ -1,0 +1,300 @@
+\documentclass[11pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+
+\usetheme{Singapore}
+
+\definecolor{DarkRed}{rgb}{0.50,0,0}
+\definecolor{DarkGreen}{rgb}{0,0.50,0}
+\definecolor{DarkBlue}{rgb}{0,0,0.50}
+\definecolor{Black}{rgb}{0,0,0}
+
+\newcommand{\ttdr}[1]{{\tt{\color{DarkRed} #1}}}
+\newcommand{\emdr}[1]{{\em{\color{DarkRed} #1}}}
+\newcommand{\ttdg}[1]{{\tt{\color{DarkGreen} #1}}}
+\newcommand{\emdg}[1]{{\em{\color{DarkGreen} #1}}}
+\newcommand{\ttdb}[1]{{\tt{\color{DarkBlue} #1}}}
+\newcommand{\emdb}[1]{{\em{\color{DarkBlue} #1}}}
+
+\setbeamertemplate{frametitle}{
+\begin{centering}
+{\Large \textbf{\textmd{\insertframetitle}}}
+\end{centering}
+}
+
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+
+\begin{frame}
+\vspace{25pt}
+\begin{center}
+\LARGE{
+{\color{DarkGreen}{
+  A Pointfree Yoneda Lemma\\
+  for\\
+  Endofunctors\\
+  of\\
+  Functional Categories}\
+}
+}
+\end{center}
+\vspace{10pt}
+\begin{center}
+\LARGE{
+{\color{DarkRed}{
+  ICMSP 2023 \\ Madrid
+}\
+}
+}
+\end{center}
+\vspace{10pt}
+\begin{center}
+\LARGE{
+{\color{DarkBlue}{
+Luc Duponcheel}}}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Previous life\end{center}}
+\begin{itemize}
+\item<2-> Mathematician
+\item<3-> Programmer 
+\vspace{20pt}
+\begin{itemize}
+\item<4-> Monad and monad transformer contributor 30 years ago
+with Erik Meijer, Graham Hutton and Doaitse Swierstra at University of Utrecht
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Current life\end{center}}
+\begin{itemize}
+\item<2-> Cyclist
+\item<3-> Gardener 
+\vspace{20pt}
+\item<4-> Mathematician
+\item<5-> Programmer
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Main themes\end{center}}
+\begin{itemize}
+\item<2-> Mathematics $\rightarrow$ Programming
+\vspace{20pt}
+\item<3-> Programming $\rightarrow$ Mathematics
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Mathematics $\rightarrow$ Programming\end{center}}
+\begin{itemize}
+\item<2-> Category theory
+\begin{itemize}
+\item<3-> Composition
+\item<4-> Additional features 
+\begin{itemize}
+\item<5-> Transformation \ldots   
+\end{itemize}
+\vspace{20pt}
+\item<6-> Separation
+\begin{itemize}
+\item<7-> specifications
+\item<8-> implementations
+\end{itemize}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Main sub-themes\end{center}}
+\begin{itemize}
+\item<2-> Composition : components
+\begin{itemize}
+\item<3-> Closed (pointfree) components
+\item<4-> Open (pointful) components
+\end{itemize}  
+\vspace{20pt}
+\item<5-> Additional features and separation : side-effects
+\begin{itemize}
+\item<6-> Specified (declared) side-effects 
+\item<7-> Implemented (defined) side-effects 
+\end{itemize}
+\end{itemize}  
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Pointful Effectfree Defined\end{center}}
+\begin{itemize}
+\item<2-> Expressions (pointful effectfree components)
+\item<3-> Operational (are evaluated to yield a result)
+\begin{itemize}
+\vspace{20pt}
+\item<4->
+\begin{verbatim}
+val zero = 0  
+val one = zero + 1
+val two = one + 1
+two
+\end{verbatim}  
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Pointfree Effectfree Defined\end{center}}
+\begin{itemize}
+\item<2-> Functions (pointfree effectfree components)
+\item<3-> Denotational (are meaningful)
+\begin{itemize}
+\vspace{20pt}   
+\item<4->
+\begin{verbatim}
+def incrementF: Function[Int, Int] = 
+  i => i + 1
+
+def zeroF: Function[Unit, Int] =
+  i => 0
+\end{verbatim}
+\vspace{20pt}   
+\item<5->
+\begin{verbatim}
+incrementF o incrementF o zeroF
+\end{verbatim}  
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Pointful Effectful Defined\end{center}}
+\begin{itemize}
+\item<2->
+\begin{verbatim}
+val readInt: Int = ...
+\end{verbatim}
+\begin{itemize}
+\vspace{20pt}
+\item<3->
+\begin{verbatim}
+val zero = readInt  
+val one = zero + 1
+val two = one + 1
+two
+\end{verbatim}  
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Pointfree Effectful Defined\end{center}}
+\begin{itemize}
+\item<2->
+\begin{verbatim}
+val readIntF: Function[Unit, Int] = ...
+\end{verbatim}
+\begin{itemize}
+\vspace{20pt}
+\item<3->
+\begin{verbatim}
+incrementF o incrementF o readIntF
+\end{verbatim}  
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Pointful Effectful Declared\end{center}}
+\begin{itemize}
+\item<2-> Computations (generalize expressions)  
+\item<3-> Operational (are executed to yield a result)
+\vspace{20pt}
+\item<4->
+\begin{verbatim}
+val readIntC: C[Int]
+\end{verbatim}
+\begin{itemize}
+\vspace{20pt}
+\item<5->
+\begin{verbatim}
+readIntC bind { i =>
+  result(i + 1) bind { j =>
+    result(j + 1) bind { k => 
+      result(k) 
+    } 
+  }
+}
+\end{verbatim}  
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Pointfree Effectful Declared\end{center}}
+\begin{itemize}
+\item<2-> Programs (generalize functions)  
+\begin{itemize}
+\item<3-> Functions can be used as programs  
+\end{itemize}
+\item<4-> Denotational (are meaningful)
+\vspace{20pt}
+\item<5->
+\begin{verbatim}
+val readIntP: Program[Unit, Int]
+
+val incrementP: Int --> Int = incrementF asProgram  
+\end{verbatim}
+\begin{itemize}
+\vspace{20pt}
+\item<6->
+\begin{verbatim}
+incrementP o incrementP o readIntP
+\end{verbatim}  
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Programming $\rightarrow$ Mathematics\end{center}}
+\begin{itemize}
+\item<2-> Type theory (as implemented by type systems)
+\vspace{20pt}
+\begin{itemize}
+\item<3-> Proofs syntactic correctness
+\item<4-> Provides confidence in semantic correctness
+\vspace{20pt}
+\begin{itemize}
+\item<5-> Formulations of laws for specifications and proofs of for implementations 
+\item<6-> Formulations and proofs of lemmas, propositions, theorems \ldots for specifications
+\end{itemize}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\begin{center}Advancing insights\end{center}}
+\begin{itemize}
+\item<2-> Common patterns leading to auxiliary lemmas, propositions, theorems \ldots
+\begin{itemize}
+\item<3-> Genericity (Do not repeat yourself)
+\end{itemize}
+\item<4-> Recognition of known concepts
+\begin{itemize}
+\item<5-> Reusability (Embrace what exists)
+\end{itemize}
+\item<6-> My experience
+\begin{itemize}
+\item<7-> 25 percent Imagination (idea)
+\item<8-> 25 percent Information (knowledge)
+\item<9-> 50 percent Transpiration (the heavy lifting)
+\end{itemize}
+\vspace{20pt}
+\item<10-> Never be happy with a solution, try to go for the best one
+\end{itemize}
+\end{frame}
+
+
+
+\end{document}

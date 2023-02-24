@@ -1,0 +1,4350 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{makeidx}
+
+\usepackage{geometry}
+
+\usepackage[framemethod=TikZ]{mdframed}
+
+\usepackage{listings}
+
+\usepackage{bm} 
+
+\makeindex
+
+\newgeometry{left=1cm, right=1cm, top=1.2cm, bottom=1.2cm}
+
+\setlength{\parskip}{12pt}
+
+\setlength{\parindent}{0pt}
+
+\lstset{basicstyle=\ttfamily\scriptsize}
+
+\newcommand{\Fun}{\mbox{\bf {\em Fun}}}
+
+\newcommand{\Set}{\mbox{\bf {\em Set}}}
+
+\newcommand{\Z}{\mbox{\bf {\em Z}}}
+\newcommand{\Y}{\mbox{\bf {\em Y}}}
+
+\newcommand{\z}{\mbox{\bf {\em z}}}
+\newcommand{\y}{\mbox{\bf {\em y}}}
+
+\newcommand{\bcirc}{\bm{\circ}}
+
+\newcommand{\after}{\mbox{\em {\small after}}}
+
+\newcommand{\I}{\mbox{\bf {\em I}}}
+
+\renewcommand{\i}{\mbox{\bf {\em i}}}
+
+\newcommand{\YF}{\mbox{\bf {\em YF}}}
+
+\newcommand{\yf}{\mbox{\bf {\em yf}}}
+
+\newcommand{\YEF}{\mbox{\bf {\em YEF}}}
+
+\newcommand{\yef}{\mbox{\bf {\em yef}}}
+
+\newcommand{\FTA}{\mbox{$F$\!{\small {\em 2}}$A$}}
+
+\newcommand{\fta}{\mbox{$f$\!{\scriptsize {\em 2}}$a$}}
+
+\newcommand{\tfta}[1]{\mbox{$f$\!{\scriptsize {\em 2}}$a$}_{\mbox{\em {\scriptsize #1}}}}
+
+\newcommand{\vtgv}{\mbox{{\normalsize {\em v}}{\scriptsize {\em 2}}{\normalsize {\em gv}}}}
+
+\newcommand{\arrow}[2]{#1\!\!\rightarrow\!\!#2}
+\newcommand{\function}[2]{\mbox{\bf{\em #1}} \!\!\Rightarrow\!\!\! \mbox{\bf{\em #2}}}
+\newcommand{\graphmorphism}[2]{#1 \rightarrow #2}
+\newcommand{\nodemorphism}[2]{#1 \rightarrow #2}
+\newcommand{\arrowmorphism}[2]{#1 \rightarrow #2}
+\newcommand{\arrowcomposition}[2]{#1 \rightarrow #2}
+\newcommand{\arrowunit}[2]{#1 \rightarrow #2}
+\newcommand{\idarrow}[3]{#2 \!\rightarrow_{#1}\! #3}
+\newcommand{\functor}[2]{#1 \rightarrow #2}
+\newcommand{\transformation}[2]{#1 \rightarrow #2}
+\newcommand{\nodefunction}[2]{#1 \!\!\Rightarrow\!\! #2}
+
+\newcommand{\defn}{\subsection{Definition}\begingroup\rm}
+\renewcommand{\not}{\subsubsection{Notation}\begingroup\rm}
+\newcommand{\code}{\subsubsection{{\tt Scala} code}\begingroup\rm \vspace{12pt}}
+\newcommand{\laws}{\subsubsection{Laws}\begingroup\rm}
+\newcommand{\props}{\subsubsection{Properties}\begingroup\rm}
+\newcommand{\lemm}{\subsection{Lemma}\begingroup\rm}
+\newcommand{\corr}{\subsection{Corollary}\begingroup\rm}
+
+\def\edefn{\endgroup\par\pagebreak[2]\addvspace{\medskipamount}}
+\let\enot=\edefn
+\let\ecode=\edefn
+\let\elaws=\edefn
+\let\eprops=\edefn
+\let\elemm=\edefn
+\let\epcorr=\edefn
+
+\newcounter{lister}
+
+\newenvironment{labeledlist}[1]
+{\begin{list}{{\rm#1\,--\,\arabic{lister}}}{\usecounter{lister}
+\settowidth{\labelwidth}{#1--1}
+\leftmargin\labelwidth \advance\leftmargin by \labelsep
+}}
+{\end{list}}
+
+\def\blist#1{\begin{labeledlist}{#1}\setcounter{lister}{-1}}
+
+\newcommand{\elist}{\end{labeledlist}}
+
+\begin{document}
+
+\title{
+A pointfree Yoneda lemma\\
+for\\
+endofunctors\\
+of\\
+functional categories
+}
+
+\author{
+Luc Duponcheel, \\ 
+mathematician and programmer, cyclist and gardener.
+}
+
+\maketitle
+
+\begin{abstract}
+Category theory~\cite{book:MacLaneSaunders} is used in almost all areas of mathematics.  In mathematics, the Yoneda
+lemma is a fundamental category theory result that suggests that, instead of studying a category $C$, one should study
+the category of all functors from $C$ to $\Fun$ (a.k.a. $\Set$), the category whose objects are sets, and whose
+morphisms are functions. This suggestion is now agreed upon to be an important step forward to a better understanding of
+various categories. Surprisingly, the lemma uses only three concepts: category, functor and natural transformation. On
+the other hand, kind of inevitably, the lemma is, pointful: it involves elements of sets.
+
+\vspace{6pt}
+
+Category theory is also used in other disciplines, ranging from physics to philosophy. This paper uses category in
+computing science~\cite{book:BarrWells} where, typically, objects are called nodes and morphisms are called arrows.
+Consider a programming language {\tt L}, with a type system that supports higher-kinded type classes~\cite{book:Pierce}.
+Using {\tt L} one can write a domain specific language library that models programming. It specifies categories
+{\tt FC}, referred to as functional categories, whose nodes, invariably, are the types of {\tt L} and whose arrows are
+called programs. Let {\tt Fun} (a.k.a. {\tt Type}) be the category whose arrows are the effectfree functions of {\tt L}.
+The most important property of a functional category {\tt FC} is the existence a functor from {\tt Fun} to {\tt FC} that
+is the identity on types. Using that functor the effectfree functions of {\tt L} can be used as programs. Of course,
+functional categories may also have effectful programs, most notably, programs that perform IO. Functors from {\tt FC}
+to {\tt Fun} can be composed with the functor from {\tt Fun} to {\tt FC} above to obtain an endofunctor of {\tt FC}.
+
+\vspace{6pt}
+
+When defining functional categories $F\!C$ in mathematics, roughly speaking, {\tt Fun} is replaced by $\Fun$. It is
+natural to try to formulate and prove a Yoneda lemma for endofunctors of functional categories. It is challenging to
+minimize the amount of concepts involved and to make both the formulation and the proof of the lemma pointfree, only
+dealing with morphisms of $F\!C$.
+
+\vspace{6pt}
+
+This paper is the result of advancing insights, obained, most notably, by writing code in {\tt Scala}~\cite{book:Scala}.
+The mathematical notation of the paper is almost identical to the programmatic notation of the code. The fact that the
+{\tt Scala} type system accepts the code implies that propositions and their proofs are syntactically correct, which,
+in its turn, especially because they are generic, provides some confidence that they are also semantically correct. 
+
+\end{abstract}
+
+\newpage
+
+\section{Fonts}\label{sec:fonts}
+
+When introducing concepts that are part of the index we use {\em emphasized} font.
+
+\begin{itemize}
+\item For {\em declarations}\index{fonts!declaration} we use $math$ font.
+\item For {\em definitions}\index{fonts!definition} we use {\bf {\em boldface math}} font.
+\item For {\em code}\index{fonts!code} we use {\tt typewriter} font.
+\end{itemize}
+
+\section{Preliminaries}\label{sec:preliminaries}
+
+\setcounter{subsection}{0}
+
+\defn\label{graph specification}
+The {\em graph specification}\index{graph specification}, $G$, declares
+\blist{$G_{dec}$}
+\item $G_0$, {\em a class of nodes}\index{graph specification!node}, $Z$, $Y$ \ldots\, ,
+\item $G_1$, {\em sets of arrows}\index{graph specification!arrow}, $Arr_{G}(Z,Y)$, containing arrows $\arrow{z}{y}$
+with {\em source}\index{graph specification!source} node $Z$ and {\em target}\index{graph specification!target} node
+$Y$.
+\elist
+\edefn
+
+Note that we distinguish classes from sets.
+
+Nodes form a {\em class}, not necessarily a {\em set}, cfr. Russell-Zermelo's paradox: sets do not form a set.
+
+\defn\label{composabale arrows}
+$G_2$, {\em composable arrows}\index{composable arrows} of a graph $G$ are arrows $\arrow{z}{y}$ and $\arrow{y}{x}$.
+\edefn
+
+\not
+$Arr_{G}(Z,Y)$ is also simply denoted $Arr(Z,Y)$ when only one graph is involved.
+\enot
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+trait Graph[Arr[-_, +_]]
+\end{lstlisting}
+\end{mdframed}
+
+Specifications are encoded as {\tt trait}'s. 
+
+{\tt Graph} does not declare any members.
+
+Programmatically, the class of nodes is, implicitly and invariably, defined as 
+{\em the class of types}\index{graph specification code!node}. Only arrows matter. 
+
+Of course, nodes being types is a limitation when encoding mathematical concepts {\em in general}, but, fortunately,
+for the {\em specific} purpose of this paper, it will turn out not to be an issue at all.
+
+The {\em class} of types is a {\em set} of types, in fact it is a {\em constructive} set of types.
+
+The sets of arrows are declared as a {\em binary type constructor parameter}\index{graph specification code!arrow},
+{\tt Arr[-\_, +\_]}, constructing {\em arrow types}\index{graph specification code!arrow type} \newline
+{\tt Arr[Z, Y]} \ldots\, , containing {\em arrow values}\index{graph specification code!arrow value} {\tt `z-->y`}
+\ldots\, .
+
+The underscores {\tt\_} are placeholders for {\em type parameters}\index{type paramenter}.
+
+{\tt -} and {\tt +} declare {\em variance}\index{variance}. Just like functions, arrows are allowed to require less and
+provide more.
+\ecode
+
+\defn\label{function graph}
+The {\em function graph}\index{function graph}, $\Fun$, defines
+\blist{$\Fun_{def}$}
+\item $\Fun_0$, the class of nodes, as {\em the class of sets}\index{set graph!node}, $\Z$, $\Y$ \ldots\, ,
+\item $\Fun_1$, the sets of arrows, as {\em the sets of functions}\index{set graph!arrow} $\Fun(\Z,\Y)$ \ldots\, ,
+containing functions $\function{z}{y}$ with source set $\Z$ and target set $\Y$.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.specific
+
+import plp.specification.{Graph}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+type Fun[-Z, +Y] = Z => Y
+
+given functionGraph: Graph[Fun] with {}
+\end{lstlisting}
+\end{mdframed}
+
+Implementations are encoded as {\tt given}'s. 
+
+{\tt functionGraph} does not define any members.
+
+The sets of functions are defined as a {\em binary type constructor}\index{set graph code!function}, {\tt Fun},
+constructing {\em function types}\index{set graph code!function type} \newline
+{\tt Fun[Z, Y]} \ldots\, , containing {\em function values}\index{set graph code!function value} {\tt `z=>y`} \ldots\, .
+\ecode
+
+\defn\label{graph morphism specification}
+The {\em graph morphism specification}\index{graph morphism specification}, $M: \graphmorphism{G}{H}$, declares
+\blist{$M_{dec}$}
+\item $M_0: \nodemorphism{G_0}{H_0}$, a {\em node part}\index{graph morphism specification!node part},
+\item $M_1: \arrowmorphism{G_1}{H_1}$ an {\em arrow part}\index{graph morphism specification!arrow part}, consisting of
+functions $Arr_{G}(Z,Y) \rightarrow Arr_{H}(M_0(Z),M_0(Y))$.
+\elist
+\edefn
+
+\not
+Nodes $M_0(Z)$ are also denoted $M(Z)$. 
+
+Arrows $M_1(\arrow{z}{y})$ are also denoted $m(\arrow{z}{y})$ and $\arrow{m(z)}{m(y)}$. 
+\enot
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+trait GraphMorphism[Arr_G[-_, +_]: Graph, Arr_H[-_, +_]: Graph, M[+_]]:
+
+  def lift[Z, Y]: Arr_G[Z, Y] => Arr_H[M[Z], M[Y]]
+\end{lstlisting}
+\end{mdframed}
+
+The node part is declared as a 
+{\em unary type constructor parameter}\index{graph morphism specification code!node part}, {\tt M[+\_]}, constructing
+{\em lifted types}\index{graph morphism specification code!lifted type} {\tt M[Z]} \ldots\, . 
+
+The arrow part is declared as a {\em function member}\index{graph morphism specification code!arrow part} {\tt lift},
+yielding {\em lifted arrows}\index{graph morphism specification code!lifted arrow}.
+
+The name {\tt lift} can, by need, be made available as {\tt m}.
+\ecode
+
+\defn\label{category specification}
+The {\em category specification}\index{category specification}, $C$, extends the graph specification. 
+
+It declares
+\blist{$C_{dec}$}
+\item $composition: \arrowcomposition{C_2}{C_1}$,
+\item $unit: \arrowunit{C_0}{C_1}$.
+\elist
+\edefn
+
+\not
+If $\arrow{z}{y}$ and $\arrow{y}{x}$ are composable arrows, then the arrow $composition(\arrow{z}{y},\arrow{y}{x})$ is
+denoted ${\arrow{y}{x}} \circ_{c} \arrow{z}{y}$ and is called the 
+{\em arrow composition}\index{category specification!arrow composition} of $\arrow{z}{y}$ and $\arrow{y}{x}$, or, simply,
+the {\em composition}\index{category specification!composition} of $\arrow{z}{y}$ and $\arrow{y}{x}$. 
+
+If $Z$ is a node, then the arrow $unit(Z)$ is denoted $\idarrow{c}{z}{z}$ and is called the 
+{\em identity arrow}\index{category specification!identity arrow} of $Z$, or, simply, the 
+{\em identity}\index{category specification!identity} of $Z$. 
+\enot
+
+\not
+${\arrow{y}{x}} \circ_{c} \arrow{z}{y}$ is also simply denoted ${\arrow{y}{x}} \circ \arrow{z}{y}$ when only one
+category is involved.
+
+$\idarrow{c}{z}{z}$ is also simply denoted $\arrow{z}{z}$ when only one category is involved.
+\enot
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+trait Category[Arr[-_, +_]] extends Graph[Arr]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def composition[Z, Y, X]: (Arr[Y, X], Arr[Z, Y]) => Arr[Z, X]
+
+  def unit[__]: Arr[__, __]
+\end{lstlisting}
+\end{mdframed}
+
+$composition$ is declared as a {\em function member}\index{category specification code!composition} {\tt composition}.
+
+$unit$ is declared as an {\em arrow member}\index{category specification code!unit} {\tt unit}. 
+
+The double underscores, {\_\_} , are {\em unnamed type parameters}\index{unnamed type parameter} that are used if type
+parameter names do not matter. If they do matter, then it is always possible to somehow introduce named ones.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  extension [Z, Y, X](`y-->x`: Arr[Y, X])
+    def o(`z-->y`: Arr[Z, Y]): Arr[Z, X] = composition(`y-->x`, `z-->y`)
+
+  def `__-->__`[__]: Arr[__, __] = unit
+\end{lstlisting}
+\end{mdframed}
+
+{\tt Category} also defines syntax, {\tt o} resp. {\tt `\_\_-->\_\_`} for {\tt composition} resp. {\tt unit}. 
+\ecode
+
+\laws\label{category laws}
+\blist{$C_{law}$}
+\item $(\arrow{x}{w} \circ \arrow{y}{x}) \circ \arrow{z}{y} = \arrow{x}{w} \circ (\arrow{y}{x} \circ \arrow{z}{y})$
+      ({\em associativity law}\index{category specification!associativity law}),
+\item $\arrow{y}{y} \circ \arrow{z}{y} = \arrow{z}{y}$
+      ({\em left identity law}\index{category specification!left identity law}),     
+\item $\arrow{z}{y} \circ \arrow{z}{z} = \arrow{z}{y}$
+      ({\em right identity law}\index{category specification!right identity law}).
+\elist
+\elaws
+
+\code
+Let
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.notation
+
+case class Law[__](equation: (__, __))
+
+extension [__](lhs: __) def =:(rhs: __): Law[__] = Law(lhs, rhs)
+\end{lstlisting}
+\end{mdframed}
+
+\clearpage
+
+in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+import plp.notation.{Law, =:}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class CategoryLaws[Arr[-_, +_]: Category]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def categoryCompositionAssociativityLaw[Z, Y, X, W]
+      : (Arr[Z, Y], Arr[Y, X], Arr[X, W]) => Law[Arr[Z, W]] =
+    (`z-->y`, `y-->x`, `x-->w`) =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+      ((`x-->w` o `y-->x`) o `z-->y`) =:
+        (`x-->w` o (`y-->x` o `z-->y`))
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def categoryLeftIdentityLaw[Z, Y]: Arr[Z, Y] => Law[Arr[Z, Y]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `y-->y` = summon[Category[Arr]].`__-->__`[Y]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (`y-->y` o `z-->y`) =:
+        (`z-->y`)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def categoryRightIdentityLaw[Z, Y]: Arr[Z, Y] => Law[Arr[Z, Y]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `z-->z` = summon[Category[Arr]].`__-->__`[Z]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (`z-->y` o `z-->z`) =:
+        (`z-->y`)
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{function category}
+The {\em function category} category\index{function category}, $\Fun$, defines
+\blist{$\Fun_{def}$}
+\item $composition: \arrowcomposition{\Fun_2}{\Fun_1}$ as {\em function composition}\index{function category!composition},
+\item $unit: \arrowunit{\Fun_0}{\Fun_1}$ as the {\em identity function}\index{function category!unit}.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.specific
+
+import plp.specification.{Category}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+given functionCategory: Category[Fun] with
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def composition[Z, Y, X]: (Fun[Y, X], Fun[Z, Y]) => Fun[Z, X] =
+    (`y=>x`, `z=>y`) => z => `y=>x`(`z=>y`(z))
+
+  def unit[__]: Fun[__, __] = __ => __
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+The double underscores, {\_\_} , are {\em unnamed function parameters}\index{unnamed function parameter} that are used
+if function parameter names do not matter. If they do matter, then it is always possible to somehow introduce named
+ones.
+
+\code
+Below is a proof.
+
+Let
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.notation
+
+import scala.collection.immutable.Seq
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+case class Proof[__](steps: Seq[__])
+
+extension [__](step: __)
+  def ==:(proof: Proof[__]): Proof[__] = Proof(step +: proof.steps)
+
+def qed[__]: Proof[__] = Proof(Seq())
+\end{lstlisting}
+\end{mdframed}
+
+in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionCategoryProofs:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def functionCompositionAssociativityProof[Z, Y, X, W]
+      : ((Fun[Z, Y], Fun[Y, X], Fun[X, W]) => Z => Proof[W]) =
+    (`z=>y`, `y=>x`, `x=>w`) =>
+      z =>   
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+        
+        ((`x=>w` o `y=>x`) o `z=>y`)(z) ==:
+          // definition o for Fun
+          (`x=>w` o `y=>x`)(`z=>y`(z)) ==:
+          // definition o for Fun
+          `x=>w`(`y=>x`(`z=>y`(z))) ==:
+          // definition o for Fun
+          `x=>w`((`y=>x` o `z=>y`)(z)) ==:
+          // definition o for Fun
+          (`x=>w` o (`y=>x` o `z=>y`))(z) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def functionLeftIdentityProof[Z, Y]: Fun[Z, Y] => Z => Proof[Y] =
+    `z=>y` =>
+      z =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val `y-->y` = functionCategory.`__-->__`[Y]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+              
+        (`y-->y` o `z=>y`)(z) ==:
+          // definition o for Fun
+          `y-->y`(`z=>y`(z)) ==:
+          // definition `y-->y` for Fun
+          (`z=>y`) (z) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+   
+  def functionRightIdentityProof[Z, Y]: Fun[Z, Y] => Z => Proof[Y] =
+    `z=>y` =>
+      z =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val `z-->z` = functionCategory.`__-->__`[Z]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+        
+        (`z=>y` o `z-->z`)(z) ==:
+          // definition o for Fun
+          `z=>y`(`z-->z`(z)) ==:
+          // definition `z-->z` for Fun
+          (`z=>y`) (z) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{functor specification}
+The {\em functor specification}\index{functor specification} $F: \functor{C}{D}$, where $C$ and $D$ are categories,
+extends the graph morphism specification.
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+trait Functor[Arr_C[-_, +_]: Category, Arr_D[-_, +_]: Category, F[+_]]
+    extends GraphMorphism[Arr_C, Arr_D, F]
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\laws\label{functor laws}
+\blist{$F_{law}$}
+\item $f(\arrow{y}{x} \circ_{c} \arrow{z}{y}) = f(\arrow{y}{x}) \circ_{d} f(\arrow{z}{y})$
+      ({\em composition law}\index{functor specification!composition law}),
+\item $f(\idarrow{c}{z}{z}) = \idarrow{d}{f(z)}{f(z)}$ 
+      ({\em identity law}\index{functor specification!identity law}).
+\elist
+\elaws
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+import plp.notation.{Law, =:}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctorLaws[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}  
+
+  def f[Z, Y]: Arr_C[Z, Y] => Arr_D[F[Z], F[Y]] =
+    summon[Functor[Arr_C, Arr_D, F]].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def functorCompositionLaw[Z, Y, X]
+      : (Arr_C[Z, Y], Arr_C[Y, X]) => Law[Arr_D[F[Z], F[X]]] =
+    (`z-->y`, `y-->x`) =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      extension [Z, Y, X](`y-->x`: Arr_C[Y, X])
+        def o_c(`z-->y`: Arr_C[Z, Y]): Arr_C[Z, X] =
+          summon[Category[Arr_C]].o[Z, Y, X](`y-->x`)(`z-->y`) 
+
+      extension [Z, Y, X](`y-->x`: Arr_D[Y, X])
+        def o_d(`z-->y`: Arr_D[Z, Y]): Arr_D[Z, X] =
+          summon[Category[Arr_D]].o[Z, Y, X](`y-->x`)(`z-->y`)           
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (f(`y-->x` o_c `z-->y`)) =:
+        (f(`y-->x`) o_d f(`z-->y`))
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def functorIdentityLaw[Z]: Law[Arr_D[F[Z], F[Z]]] =  
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    val `z-c->z` = summon[Category[Arr_C]].`__-->__`[Z]
+
+    val `f[z]-d->f[z]` = summon[Category[Arr_D]].`__-->__`[F[Z]]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    (f(`z-c->z`)) =:
+      (`f[z]-d->f[z]`)
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{endofunctor}
+An {\em endofunctor}\index{functor specification!endofunctor} is a functor $F: \functor{C}{C}$.
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+type EndoFunctor[Arr[-_, +_], F[+_]] = Functor[Arr, Arr, F]
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{composed functor}
+Given
+\begin{itemize}
+\item categories $C$, $D$ and $E$,
+\item functors $F: \functor{C}{D}$ and $G: \functor{D}{E}$,  
+\end{itemize}      
+the {\em composed functor}\index{functor specification!composed functor}, $G \bcirc F: \functor{C}{E}$, defines
+\blist{$(G \bcirc F)_{def}$}
+\item $(G \bcirc F)(Z) = G(F(Z))$,
+\item $(g \bcirc f)(\arrow{z}{y}) = g(f(\arrow{z}{y}))$.
+\elist
+\edefn
+
+\clearpage
+
+\code
+Let
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.notation
+
+type O = [G[+_], F[+_]] =>> [__] =>> G[F[__]]
+\end{lstlisting}
+\end{mdframed}
+
+in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.generic
+
+import plp.notation.{O}
+
+import plp.specification.{Category, Functor}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+given composedFunctor[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    Arr_E[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    G[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, G]
+]: Functor[Arr_C, Arr_E, G O F] with
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def lift[Z, Y]: Arr_C[Z, Y] => Arr_E[(G O F)[Z], (G O F)[Y]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    val f: Arr_C[Z, Y] => Arr_D[F[Z], F[Y]] =
+      summon[Functor[Arr_C, Arr_D, F]].lift
+
+    val g: Arr_D[F[Z], F[Y]] => Arr_E[G[F[Z]], G[F[Y]]] =
+      summon[Functor[Arr_D, Arr_E, G]].lift
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    `z-->y` => g(f(`z-->y`))
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+ 
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class ComposedFunctorProofs[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    Arr_E[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    G[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def f[Z, Y]: Arr_C[Z, Y] => Arr_D[F[Z], F[Y]] =
+    summon[Functor[Arr_C, Arr_D, F]].lift
+
+  def g[Z, Y]: Arr_D[F[Z], F[Y]] => Arr_E[G[F[Z]], G[F[Y]]] =
+    summon[Functor[Arr_D, Arr_E, G]].lift
+
+  def `gof`[Z, Y]: Arr_C[Z, Y] => Arr_E[G[F[Z]], G[F[Y]]] =
+    composedFunctor[Arr_C, Arr_D, Arr_E, F, G].lift    
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+   
+  def functorCompositionProof[Z, Y, X]
+      : Arr_C[Z, Y] => (Arr_C[Y, X] => Proof[Arr_E[(G O F)[Z], (G O F)[X]]]) =
+    `z-->y` =>
+      `y-->x` =>        
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        extension [Z, Y, X](`y-->x`: Arr_C[Y, X])
+          def o_c(`z-->y`: Arr_C[Z, Y]): Arr_C[Z, X] =
+            summon[Category[Arr_C]].o[Z, Y, X](`y-->x`)(`z-->y`)
+
+        extension [Z, Y, X](`y-->x`: Arr_D[Y, X])
+          def o_d(`z-->y`: Arr_D[Z, Y]): Arr_D[Z, X] =
+            summon[Category[Arr_D]].o[Z, Y, X](`y-->x`)(`z-->y`)
+
+        extension [Z, Y, X](`y-->x`: Arr_E[Y, X])
+          def o_e(`z-->y`: Arr_E[Z, Y]): Arr_E[Z, X] =
+            summon[Category[Arr_E]].o[Z, Y, X](`y-->x`)(`z-->y`)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+        
+        (`gof`(`y-->x` o_c `z-->y`)) ==:
+          // definition lift for composedFunctor
+          (g(f(`y-->x` o_c `z-->y`))) ==:
+          // functorCompositionLaw for f
+          (g(f(`y-->x`) o_d f(`z-->y`))) ==:
+          // functorCompositionLaw for g
+          (g(f(`y-->x`)) o_e g(f(`z-->y`))) ==:
+          // definition lift for composedFunctor
+          (`gof`(`y-->x`) o_e `gof`(`z-->y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}   
+ 
+  def functorIdentityProof[Z]: Proof[Arr_E[(G O F)[Z], (G O F)[Z]]] =  
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    val `z-c->z` = summon[Category[Arr_C]].`__-->__`[Z] 
+
+    val `f[z]-d->f[z]` = summon[Category[Arr_D]].`__-->__`[F[Z]]
+
+    val `(gof)[z]-e->(gof)[z]` = summon[Category[Arr_E]].`__-->__`[(G O F)[Z]]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+    
+    (`gof`(`z-c->z`)) ==:
+      // definition lift for composedFunctor
+      (g(f(`z-c->z`))) ==:
+      // functorIdentityLaw for f
+      (g(`f[z]-d->f[z]`)) ==:
+      // functorIdentityLaw for g
+      (`(gof)[z]-e->(gof)[z]`) ==:
+      // done
+      qed
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{identity endofunctor}
+The {\em identity endofunctor}\index{functor specification!identity endofunctor} of category $C$, $\I: \functor{C}{C}$,
+defines
+\blist{$\I_{def}$}
+\item $\I(Z) = Z$,
+\item $\i(\arrow{z}{y}) = \arrow{z}{y}$.
+\elist
+\edefn
+
+\code
+Let
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+package plp.notation
+
+type I = [__] =>> __
+\end{lstlisting}
+\end{mdframed}
+
+in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+package plp.implementation.generic
+
+import plp.notation.{I}
+
+import plp.specification.{Category, EndoFunctor}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+given identityEndoFunctor[Arr[-_, +_]: Category]: EndoFunctor[Arr, I] with
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def lift[Z, Y]: Arr[Z, Y] => Arr[I[Z], I[Y]] =
+    `z-->y` => `z-->y`
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class IdentityEndoFunctorProofs[Arr[-_, +_]: Category]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def i[Z, Y]: Arr[Z, Y] => Arr[Z, Y] = identityEndoFunctor.lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def functorCompositionProof[Z, Y, X]
+      : Arr[Z, Y] => (Arr[Y, X] => Proof[Arr[I[Z], I[X]]]) =
+    `z-->y` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        (i(`y-->x` o `z-->y`)) ==:
+          // definition i
+          identity(`y-->x` o `z-->y`) ==:
+          // definition identity
+          (`y-->x` o `z-->y`) ==:
+          // definition identity
+          (identity(`y-->x`) o identity(`z-->y`)) ==:
+          // definition i
+          (i(`y-->x`) o i(`z-->y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def functorIdentityProof[Z]: Proof[Arr[I[Z], I[Z]]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    val `z-->z` = summon[Category[Arr]].`__-->__`[Z]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    (i(`z-->z`)) ==:
+      // definition i
+      (identity(`z-->z`)) ==:
+      // definition identity
+      (`z-->z`) ==:
+      // done
+      qed
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{Yoneda functor}
+The {\em Yoneda functor}\index{Yoneda functor} for node $Z$ of category $C$, $\YF_{Z}: \functor{C}{\Fun}$, defines
+
+\blist{$\YF_{Z}$}
+\item $\YF_{Z}(Y) = Arr(Z, Y)$,
+\item $\yf_{z}(\arrow{y}{x})(\arrow{z}{y}) = \arrow{y}{x} \circ \arrow{z}{y}$.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.generic
+
+import plp.specification.{Category, Functor}
+
+import plp.implementation.specific.{Fun, functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+type Yoneda = [Arr[-_, +_]] =>> [Z] =>> [Y] =>> Arr[Z, Y]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+given yonedaFunctor[Arr[-_, +_]: Category, Z]: Functor[Arr, Fun, Yoneda[Arr][Z]]
+  with
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}  
+
+  type YF = [Z] =>> [__] =>> Yoneda[Arr][Z][__]
+
+  def lift[Y, X]: Arr[Y, X] => Fun[YF[Z][Y], YF[Z][X]] =
+    `y-->x` => `z-->y` => `y-->x` o `z-->y`
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\code
+Below is a proof
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class YonedaFunctorProofs[Z, Arr[-_, +_]: Category]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  type YF = [Z] =>> [__] =>> Yoneda[Arr][Z][__]
+
+  def yf[Y, X]: Arr[Y, X] => (YF[Z][Y] => YF[Z][X]) = yonedaFunctor.lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def compositionProof[Y, X, W]
+      : (Arr[Y, X], Arr[X, W]) => YF[Z][Y] => Proof[YF[Z][W]] =
+    (`y-->x`, `x-->w`) =>
+      `z-->y` => 
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+        
+        (yf(`x-->w` o `y-->x`)(`z-->y`)) ==:
+          // definition yf
+          ((`x-->w` o `y-->x`) o `z-->y`) ==:
+          // categoryAssociativityLaw for Arr
+          (`x-->w` o (`y-->x` o `z-->y`)) ==:
+          // definition yf
+          (`x-->w` o yf(`y-->x`)(`z-->y`)) ==:
+          // definition yf
+          (yf(`x-->w`)(yf(`y-->x`)(`z-->y`))) ==:
+          // definition o for functionCategory
+          ((yf(`x-->w`) o yf(`y-->x`))(`z-->y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def identityProof[Y]: Arr[Z, Y] => Proof[YF[Z][Y]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `y-->y` = summon[Category[Arr]].`__-->__`[Y] 
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (yf(`y-->y`)(`z-->y`)) ==:
+        // definition yf
+        (`y-->y` o `z-->y`) ==:
+        // categoryLeftIdentityLaw for Arr
+        (`z-->y`) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\defn\label{natural transformation specification}
+The {\em natural transformation specification}\index{natural transformation specification}
+$\tau: \transformation{F}{G}$, where $F: \functor{C}{D}$ and $G: \functor{C}{D}$ are functors, declares
+\blist{$\tau_{dec}$}
+\item arrows $\tau_{z} \in Arr_{D}(F(Z),G(Z))$.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+trait NaturalTransformation[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    G[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def transform[__]: Arr_D[F[__], G[__]]
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+$\tau$ is declared as an {\em arrow member}\index{natural transformation specification code!natural transformation}
+{\tt transform}.
+
+The name {\tt transform} can, by need, be made available as {\tt tau}.
+
+{\tt Scala} allows using $\tau$ but, for {\tt LaTeX} typesetting reasons, we use {\tt tau} instead.
+
+\laws\label{natural transformation laws}
+\blist{$\tau_{law}$}
+\item $\tau_{y} \circ_{d} f(\arrow{z}{y}) = g(\arrow{z}{y}) \circ_{d} \tau_{z}$
+      ({\em commutativity law}\index{natural transformation specification!commutativity law}).
+\elist
+\elaws
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Law, =:}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class NaturalTransformationLaw[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    G[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, G],
+    T[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr_C, Arr_D, F, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def naturalTransformationLaw[Z, Y]: Arr_C[Z, Y] => Law[Arr_D[F[Z], G[Y]]] = 
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      def tau[__]: Arr_D[F[__], G[__]] =
+        summon[NaturalTransformation[Arr_C, Arr_D, F, G]].transform
+
+      val f: Arr_C[Z, Y] => Arr_D[F[Z], F[Y]] =
+        summon[Functor[Arr_C, Arr_D, F]].lift
+
+      val g: Arr_C[Z, Y] => Arr_D[G[Z], G[Y]] =
+        summon[Functor[Arr_C, Arr_D, G]].lift
+
+      extension [Z, Y, X](`y-->x`: Arr_D[Y, X])
+        def o_d(`z-->y`: Arr_D[Z, Y]): Arr_D[Z, X] =
+          summon[Category[Arr_D]].o(`y-->x`)(`z-->y`)      
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (tau o_d f(`z-->y`)) =:
+        (g(`z-->y`) o_d tau)
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+Note that, using programmatic notation, we twice used {\tt tau} while, using mathematical notation, we used $\tau_{z}$
+and $\tau_{y}$. In fact, we could have used {\tt tau[Z]} and {\tt tau[Y]} as in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (tau[Y] o_d f(`z-->y`)) =:
+        (g(`z-->y`) o_d tau[Z])
+\end{lstlisting}
+\end{mdframed}
+
+but the {\tt Scala} type system is clever enough to infer the types {\tt Z} and {\tt Y} involved.
+
+\not
+$\tau_{z}$ is also simply denoted $\tau$ if $z$ can be inferred.
+\enot
+
+\defn\label{composed natural transformation}
+Given
+\begin{itemize}
+\item a category $C$,
+\item endofunctors, $F: \functor{C}{C}$, $G: \functor{C}{C}$, $H: \functor{C}{C}$,
+\item natural transformations $\alpha: \transformation{F}{G}$ and $\beta: \transformation{H}{K}$,
+\end{itemize} 
+the {\em composed natural transformation}\index{natural transformation specification!composed natural transformation}
+$\beta \bcirc \alpha: \transformation{C}{C}$ defines
+
+\blist{$(\beta \bcirc \alpha)_{def}$}
+\item $(\beta \bcirc \alpha)_{z} = \beta_{z} \circ \alpha_{z}$.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.generic
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.specification.{Category, Functor, NaturalTransformation}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+def composedNaturalTransformation[
+    Arr[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr, Arr, F],
+    G[+_]: [_[+_]] =>> Functor[Arr, Arr, G],
+    H[+_]: [_[+_]] =>> Functor[Arr, Arr, H],
+    S[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr, Arr, F, G],
+    T[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr, Arr, G, H]
+]: NaturalTransformation[Arr, Arr, F, H] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def alpha[__] = summon[NaturalTransformation[Arr, Arr, F, G]].transform[__]
+
+  def beta[__] = summon[NaturalTransformation[Arr, Arr, G, H]].transform[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  new {
+    override def transform[__]: Arr[F[__], H[__]] =
+      beta o alpha
+  }
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\code
+
+Below is a proof  
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class ComposedNaturalTransformationProof[
+    Arr[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr, Arr, F],
+    G[+_]: [_[+_]] =>> Functor[Arr, Arr, G],
+    H[+_]: [_[+_]] =>> Functor[Arr, Arr, H],
+    S[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr, Arr, F, G],
+    T[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr, Arr, G, H]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def naturalTransformationProof[Z, Y]: Arr[Z, Y] => Proof[Arr[F[Z], H[Y]]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    def alpha[__] = summon[NaturalTransformation[Arr, Arr, F, G]].transform[__]
+
+    def beta[__] = summon[NaturalTransformation[Arr, Arr, G, H]].transform[__]
+    
+    def tau[__] =
+      composedNaturalTransformation[Arr, F, G, H, S, T].transform[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    val f: Arr[Z, Y] => Arr[F[Z], F[Y]] =
+      summon[Functor[Arr, Arr, F]].lift
+
+    val g: Arr[Z, Y] => Arr[G[Z], G[Y]] =
+      summon[Functor[Arr, Arr, G]].lift
+
+    val h: Arr[Z, Y] => Arr[H[Z], H[Y]] =
+      summon[Functor[Arr, Arr, H]].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    `z-->y` =>
+      (tau o f(`z-->y`)) ==:
+        // definition tau
+        ((beta o alpha) o f(`z-->y`)) ==:
+        // categoryCompositionAssociativityLaw for Arr
+        (beta o (alpha o f(`z-->y`))) ==:
+        // naturalTransformationLaw for S
+        (beta o (g(`z-->y`) o alpha)) ==:
+        // categoryCompositionAssociativityLaw for Arr
+        ((beta o g(`z-->y`)) o alpha) ==:
+        // naturalTransformationLaw for T
+        ((h(`z-->y`) o beta) o alpha) ==:
+        // categoryCompositionAssociativityLaw for Arr
+        (h(`z-->y`) o (beta o alpha)) ==:
+        // definition tau
+        (h(`z-->y`) o tau) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}
+\ecode  
+
+\defn\label{Left functor composed natural transformation}
+Given
+\begin{itemize}
+\item categories $C$, $D$ and $E$,
+\item functors, $F: \functor{C}{D}$, $H: \functor{D}{E}$ and $K: \functor{D}{E}$,
+\item natural transformations $\alpha: \transformation{F}{G}$ and $\beta: \transformation{H}{K}$,
+\end{itemize} 
+
+natural transformation
+$\beta\!F: \transformation{H \bcirc F}{K \bcirc F}$\index{natural transformation specification!left functor composed natural transformation}
+defines 
+\blist{($\beta\!F)_{def}$}
+\item $(\beta\!F)_{z} = \beta_{f(z)}$ 
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.generic
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{O}
+
+import plp.specification.{Category, Functor, NaturalTransformation}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+def leftFunctorComposedNaturalTransformation[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    Arr_E[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    H[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, H],
+    K[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, K],
+    S[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr_D, Arr_E, H, K]
+]: NaturalTransformation[Arr_C, Arr_E, H O F, K O F] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  given `hof`: Functor[Arr_C, Arr_E, H O F] =
+    composedFunctor[Arr_C, Arr_D, Arr_E, F, H]
+
+  given `kof`: Functor[Arr_C, Arr_E, K O F] =
+    composedFunctor[Arr_C, Arr_D, Arr_E, F, K]
+
+  def beta[__] = summon[NaturalTransformation[Arr_D, Arr_E, H, K]].transform[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  new {
+    override def transform[__]: Arr_E[(H O F)[__], (K O F)[__]] =
+      beta[F[__]]
+  }
+\end{lstlisting}
+\end{mdframed}
+\ecode  
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class LeftFunctorComposedNaturalTransformationProof[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    Arr_E[-_, +_]: Category,
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    H[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, H],
+    K[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, K],
+    S[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr_D, Arr_E, H, K]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def naturalTransformationProof[Z, Y]
+      : Arr_C[Z, Y] => Proof[Arr_E[(H O F)[Z], (K O F)[Y]]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      def beta[__] =
+        summon[NaturalTransformation[Arr_D, Arr_E, H, K]].transform[__]
+
+      def tau[__] =
+        leftFunctorComposedNaturalTransformation[
+          Arr_C,
+          Arr_D,
+          Arr_E,
+          F,
+          H,
+          K,
+          S
+        ]
+          .transform[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    def f[Z, Y]: Arr_C[Z, Y] => Arr_D[F[Z], F[Y]] =
+      summon[Functor[Arr_C, Arr_D, F]].lift
+
+    def h[Z, Y]: Arr_D[Z, Y] => Arr_E[H[Z], H[Y]] =
+      summon[Functor[Arr_D, Arr_E, H]].lift
+
+    def k[Z, Y]: Arr_D[Z, Y] => Arr_E[K[Z], K[Y]] =
+      summon[Functor[Arr_D, Arr_E, K]].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+      
+      (tau o (h o f)(`z-->y`)) ==:
+        // definition tau
+        (beta[F[Y]] o (h o f)(`z-->y`)) ==:
+        // definition o for functionCategory
+        (beta[F[Y]] o h(f(`z-->y`))) ==:
+        // naturalTransformationLaw for S (with f(`z-->y`))
+        (k(f(`z-->y`)) o beta[F[Z]]) ==:
+        // definition o for functionCategory
+        ((k o f)(`z-->y`) o beta[F[Z]]) ==:
+        // definition tau
+        ((k o f)(`z-->y`) o tau) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}
+\ecode  
+
+\defn\label{Right functor composed natural transformation}
+Given
+\begin{itemize}
+\item categories $C$, $D$ and $E$,
+\item functors, $H: \functor{D}{E}$, $F: \functor{C}{D}$ and $G: \functor{C}{D}$,
+\item natural transformations $\alpha: \transformation{F}{G}$ and $\beta: \transformation{H}{K}$,
+\end{itemize} 
+
+natural transformation 
+$H\!\alpha: \transformation{H \bcirc F}{H \bcirc G}$\index{natural transformation specification!right functor composed natural transformation}
+defines
+\blist{($H\!\alpha)_{def}$}
+\item $(H\!\alpha)_{z} = h(\alpha_{z})$.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{O}
+
+import plp.specification.{Category, Functor, NaturalTransformation}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+def rightFunctorComposedNaturalTransformation[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    Arr_E[-_, +_]: Category,
+    H[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, H],
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    G[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, G],
+    T[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr_C, Arr_D, F, G]
+]: NaturalTransformation[Arr_C, Arr_E, H O F, H O G] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  given `hof`: Functor[Arr_C, Arr_E, H O F] =
+    composedFunctor[Arr_C, Arr_D, Arr_E, F, H]
+
+  given `hog`: Functor[Arr_C, Arr_E, H O G] =
+    composedFunctor[Arr_C, Arr_D, Arr_E, G, H]
+
+  def alpha[__]: Arr_D[F[__], G[__]] =
+    summon[NaturalTransformation[Arr_C, Arr_D, F, G]].transform[__]
+
+  def h[Z, Y]: Arr_D[Z, Y] => Arr_E[H[Z], H[Y]] =
+    summon[Functor[Arr_D, Arr_E, H]].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  new {
+    override def transform[__]: Arr_E[(H O F)[__], (H O G)[__]] =
+      h(alpha[__])
+  }
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class RightFunctorComposedNaturalTransformationProof[
+    Arr_C[-_, +_]: Category,
+    Arr_D[-_, +_]: Category,
+    Arr_E[-_, +_]: Category,
+    H[+_]: [_[+_]] =>> Functor[Arr_D, Arr_E, H],
+    F[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, F],
+    G[+_]: [_[+_]] =>> Functor[Arr_C, Arr_D, G],
+    T[_[-_, +_], _[-_, +_], _[+_], _[+_]]: [_[
+        _[-_, +_],
+        _[-_, +_],
+        _[+_],
+        _[+_]
+    ]] =>> NaturalTransformation[Arr_C, Arr_D, F, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def naturalTransformationProof[Z, Y]
+      : Arr_C[Z, Y] => Proof[Arr_E[(H O F)[Z], (H O G)[Y]]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      def alpha[__]: Arr_D[F[__], G[__]] =
+        summon[NaturalTransformation[Arr_C, Arr_D, F, G]].transform[__]
+
+      def tau[__] =
+        rightFunctorComposedNaturalTransformation[
+          Arr_C,
+          Arr_D,
+          Arr_E,
+          H,
+          F,
+          G,
+          T
+        ]
+          .transform[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      def h[Z, Y]: Arr_D[Z, Y] => Arr_E[H[Z], H[Y]] =
+        summon[Functor[Arr_D, Arr_E, H]].lift
+
+      def f[Z, Y]: Arr_C[Z, Y] => Arr_D[F[Z], F[Y]] =
+        summon[Functor[Arr_C, Arr_D, F]].lift
+
+      def g[Z, Y]: Arr_C[Z, Y] => Arr_D[G[Z], G[Y]] =
+        summon[Functor[Arr_C, Arr_D, G]].lift 
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (tau o (h o f)(`z-->y`)) ==:
+        // definition tau
+        (h(alpha) o (h o f)(`z-->y`)) ==:
+        // definition o for functionCategory
+        (h(alpha) o h(f(`z-->y`))) ==:
+        // functorCompositionLaw for h
+        (h(alpha o f(`z-->y`))) ==:
+        // naturalTransformationLaw for T
+        (h(g(`z-->y`) o alpha)) ==:
+        // functorCompositionLaw for h
+        (h(g(`z-->y`)) o h(alpha)) ==:
+        // definition o for functionCategory
+        ((h o g)(`z-->y`) o h(alpha)) ==:
+        // definition tau
+        ((h o g)(`z-->y`) o tau) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}  
+\ecode
+
+\defn\label{pre-triple specification} 
+The {\em pre-triple specification}\index{pre-triple specification} for category $C$, $(PT,\eta)$, declares
+\blist{$\pi\tau_{dec}$}
+\item an endofunctor $PT: \functor{C}{C}$,
+\item a natural transformation $\eta: \transformation{\I}{PT}$.
+\elist
+$\eta$ is called the {\em unit}\index{pre-triple specification!unit} of the pre-triple.
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+import plp.notation.{I}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+trait PreTriple[
+    Arr[-_, +_]: Category,
+    PT[+_]: [_[+_]] =>> EndoFunctor[Arr, PT]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val etaNaturalTransformation: NaturalTransformation[Arr, Arr, I, PT]
+
+  def eta[__]: Arr[I[__], PT[__]] = etaNaturalTransformation.transform
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+$PT$ is declared as a {\em type constructor parameter}\index{pre-triple specification code!endofunctor} {\tt PT}.
+
+$\eta$ is declared as a {\em natural transformation member}\index{pre-triple specification code!natural transformation}
+{\tt etaNaturalTransformation} and corresponding defined {\em arrow member} {\tt eta}.
+
+\defn\label{triple specification} 
+The {\em triple specification}\index{triple specification} for category $C$, $(T,\mu,\eta)$, declares
+\blist{$\tau_{dec}$}
+\item a pre-triple $(T,\eta)$
+\item a natural transformation $\mu: \transformation{T \bcirc T}{T}$.
+\elist
+$\mu$ is called the {\em multiplication}\index{triple specification!multiplication} of the triple.
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+import plp.notation.{O}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+trait Triple[Arr[-_, +_]: Category, T[+_]: [_[+_]] =>> EndoFunctor[Arr, T]]
+    extends PreTriple[Arr, T]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def t[Z, Y]: Arr[Z, Y] => Arr[T[Z], T[Y]] = summon[EndoFunctor[Arr, T]].lift
+
+  val muNaturalTransformation: NaturalTransformation[Arr, Arr, T O T, T]
+
+  def mu[__]: Arr[(T O T)[__], T[__]] = muNaturalTransformation.transform
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+$\mu$ is declared as a {\em natural transformation member}\index{triple specification code!natural transformation}
+{\tt muNaturalTransformation} and corresponding defined {\em arrow member} {\tt mu}.
+
+\laws\label{triple laws}
+In the laws below, the unit of a category, when treated as a natural transformation, is denoted $\upsilon$.
+\blist{$\tau_{law}$}
+\item $\mu \bcirc (\eta T) = \upsilon$ 
+({\em left identity law}\index{triple specification!left identity law}),
+\item $\mu \bcirc (T \eta) = \upsilon$
+({\em right identity law}\index{triple specification!right identity law}),
+\item $\mu \bcirc (T \mu) = \mu \bcirc (\mu T)$
+({\em associativity law}\index{triple specification!associativity law}).
+\elist
+\elaws
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Law, =:}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class TripleLaws[Arr[-_, +_]: Category, T[+_]: [_[+_]] =>> Triple[Arr, T]]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val c: Category[Arr] = summon[Category[Arr]]
+
+  import c.{o, unit => upsilon}
+
+  val triple: Triple[Arr, T] = summon[Triple[Arr, T]]
+
+  import triple.{t, eta, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def tripleLeftIdentityLaw[__]: Law[Arr[T[__], T[__]]] =
+    (mu o eta) =:
+      (upsilon)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def tripleRightIdentityLaw[__]: Law[Arr[T[__], T[__]]] =
+    (mu o t(eta)) =:
+      (upsilon)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}  
+    
+  def tripleAssociativityLaw[__]: Law[Arr[(T O T O T)[__], T[__]]] =
+    (mu o mu) =:
+      (mu o t(mu))
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+Note that the first and last laws could have been
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    (mu o eta[T[__]]) =:
+      (upsilon)
+\end{lstlisting}
+\end{mdframed}
+
+and
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}  
+    
+    (mu o mu[T[__]]) =:
+      (mu o t(mu))
+\end{lstlisting}
+\end{mdframed}
+
+but the {\tt Scala} type system is clever enough to infer the types {\tt T[\_\_]} involved.
+
+\defn\label{pre-functional category specification}
+The {\em pre-functional category specification}\index{pre-functional category specification}, $P\!F\!C$, extends the
+category specification. 
+
+$P\!F\!C$ specifies categories whose nodes are the nodes of $\Fun$, in other words, the class of all sets.
+
+\vspace{6pt}
+
+It declares
+\blist{$P\!F\!C_{dec}$}
+\item {\em being a functor}\index{pre-functional category specification!functor}, $\FTA: \functor{\Fun}{P\!F\!C}$,
+that is the identity on nodes, turning functions into arrows.
+\elist
+
+It defines
+\blist{$P\!F\!C_{def}$}
+\item {\em being a pre-triple}\index{pre-functional category specification!pre-triple}, $(\!\YEF_{U},\eta)$, for
+$P\!F\!C$, where $U$ is a terminal node (singleton set) of the category $\Fun$, $\YEF_{Z} = \FTA \bcirc \YF_{Z}$ is the 
+{\em Yoneda endofunctor for $Z$}\index{pre-functional category specification!Yoneda endofunctor}, and where
+$\eta_{y} \in Arr(\I(Y),\YEF_{U}(Y)) = \fta(\vtgv)$, where 
+$\vtgv \in \Fun(\I(Y),\YEF_{Z}(Y)) = y \mapsto \fta(z \mapsto y)$ turns values into
+{\em global values}\index{global value} of $\Fun$.
+\elist
+
+Since $\vtgv$ is defined in terms of $\fta$, which is declared, we use {\em math} font for it.
+Since $\eta$ is defined in terms of $\fta$ and $\vtgv$ we use {\em math} font for it.
+
+From a functional programming viewpoint, it is instructive to think about arrows $\fta(\nodefunction{z}{y})$ as
+{\em pure functions}\index{pre-functional category specification!pure function} 
+(a.k.a {\em effectfree arrows}\index{pre-functional category specification!effectfree arrows}) and other arrows as
+{\em impure functions}\index{pre-functional category specification!impure function}
+(a.k.a. {\em effectful arrows}\index{pre-functional category specification!effectful arrow}).
+\edefn
+
+\code
+Let
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.notation
+
+type U = Unit
+\end{lstlisting}
+\end{mdframed}
+
+in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+
+import plp.notation.{O, I, U}
+
+import plp.implementation.specific.{Fun}
+
+import plp.implementation.generic.{
+  identityEndoFunctor,
+  Yoneda,
+  yonedaFunctor,
+  yonedaEndoFunctor
+}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+trait PreFunctionalCategory[
+    Arr[-_, +_]: Category: [_[-_, +_]] =>> Functor[Fun, Arr, I]
+] extends Category[Arr]
+    with PreTriple[Arr, Yoneda[Arr][U]]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def f2a[Z, Y]: Fun[Z, Y] => Arr[Z, Y] = summon[Functor[Fun, Arr, I]].lift
+
+  def v2gv[__]: Fun[__, Arr[U, __]] = __ => f2a(_ => __)
+
+  val etaNaturalTransformation: NaturalTransformation[Arr, Arr, I, YEF[U]] =
+    given PreFunctionalCategory[Arr] = this
+    new:
+      def transform[__]: Arr[I[__], YEF[U][__]] =
+        f2a(v2gv)
+\end{lstlisting}
+\end{mdframed}
+
+Being a functor $\FTA$ is declared as a {\em type class extension} for {\tt Arr} using 
+{\tt [\_[-\_, +\_]] =>> Functor[Fun, Arr, I]}\index{pre-functional category specification code!functor}.
+
+Auxiliary members {\tt f2a} and {\tt v2gv}, corresponding with $\fta$ and $\vtgv$ are defined as well. 
+
+Being a pre-triple $(\!\YEF_{U},\eta)$ is defined as an {\em object-oriented extension} using  
+{\tt with PreTriple[Arr, Yoneda[Arr][U]]}\index{pre-functional category specification code!pre-triple}, and by defining
+$\eta$ as a {\em natural transformation member} {\tt etaNaturalTransformation}, as such also defining {\tt eta}.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  type YF = [Z] =>> [__] =>> Yoneda[Arr][Z][__]
+
+  def yf[Z, Y, X]: Arr[Y, X] => Fun[YF[Z][Y], YF[Z][X]] =
+    yonedaFunctor[Arr, Z].lift
+
+  type YEF = [Z] =>> [__] =>> Yoneda[Arr][Z][__]
+
+  def yef[Z, Y, X]: Arr[Y, X] => Arr[YEF[Z][Y], YEF[Z][X]] =
+    given PreFunctionalCategory[Arr] = this
+    yonedaEndoFunctor[Arr, Z].lift
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+Auxiliary type members {\tt YF} and {\tt YEF}, function member {\tt yf} and arrow member {\tt yef} are defined as well.
+
+The code above makes use of {\tt yonedaEndoFunctor} whose code is below.
+
+\code
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.generic
+
+import plp.specification.{EndoFunctor, PreFunctionalCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+given yonedaEndoFunctor[Arr[-_, +_]: PreFunctionalCategory, Z]
+    : EndoFunctor[Arr, Yoneda[Arr][Z]] with
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val pfc = summon[PreFunctionalCategory[Arr]]
+  
+  import pfc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def lift[Y, X]: Arr[Y, X] => Arr[YEF[Z][Y], YEF[Z][X]] =
+    `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import pfc.{f2a, yf, YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      f2a(yf(`y-->x`))
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\laws\label{pre-functional category laws}
+\blist{$P\!F\!C_{law}$}
+\item $\FTA$ is a functor\index{pre-functional category specification!functor law},
+\item $(\!\YEF_{U},\eta)$ is a pre-triple\index{pre-functional category specification!pre-triple law}, in other words,
+$\eta: \I \rightarrow \YEF_{U}$ is a natural transformation,
+\item $\eta \circ \arrow{u}{z} = \vtgv(\arrow{u}{z})$
+      ({\em $\eta$ law}\index{pre-functional category specification!$\eta$ law}).
+\elist
+\elaws
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Law, =:}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class PreFunctionalCategoryLaws[Arr[-_, +_]: PreFunctionalCategory]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  import plp.implementation.{functionCategory}
+
+  val pfc = summon[PreFunctionalCategory[Arr]]
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def preFunctionalCategoryFunctorCompositionLaw[Z, Y, X]
+      : Fun[Z, Y] => (Fun[Y, X] => Law[Arr[Z, X]]) =
+    `z=>y` =>
+      `y=>x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{f2a}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        (f2a(`y=>x` o `z=>y`)) =:
+          (f2a(`y=>x`) o f2a(`z=>y`))
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def preFunctionalCategoryFunctorIdentityLaw[__]: Law[Arr[__, __]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  import functionCategory.{`__-->__` => `__-f->__`}
+
+  import pfc.{`__-->__`, f2a}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  f2a(`__-f->__`) =:
+    `__-->__`
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  import pfc.{YEF}
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def preFunctionalCategoryEtaNaturalTransformationLaw[Z, Y]
+      : Arr[Z, Y] => Law[Arr[I[Z], YEF[U][Y]]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import pfc.{yef, eta}
+
+      val i: Arr[Z, Y] => Arr[Z, Y] = identityEndoFunctor[Arr].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (eta o i(`z-->y`)) =:
+        (yef(`z-->y`) o eta)
+\end{lstlisting}
+\end{mdframed}       
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def preFunctionalCategoryEtaLaw[__]: YEF[U][__] => Law[(YEF[U] O YEF[U])[__]] =
+    `u-->__` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import pfc.{eta, v2gv}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (eta o `u-->__`) =:
+        (v2gv(`u-->__`))  
+\end{lstlisting}
+\end{mdframed}        
+\ecode
+
+\props
+The following pre-functional category properties hold
+\blist{$\YEF$}
+\item $\fta(\nodefunction{z}{y}) \circ \vtgv(z) = \vtgv(\nodefunction{z}{y}(z))$
+({\em pointfree application}\index{pre-functional category specification!pointfree application}),
+\item $\yef(\arrow{y}{x}) \circ \vtgv(\arrow{z}{y}) = \vtgv(\arrow{y}{x} \circ \arrow{z}{y})$
+      ({\em pointfree Yoneda}\index{pre-functional category specification!pointfree Yoneda}).
+\elist
+\eprops
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.proposition
+
+import plp.notation.{U, Law, =:}
+
+import plp.specification.{PreFunctionalCategory}
+
+import plp.implementation.specific.{Fun}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class PreFunctionalCategoryProperties[Arr[-_, +_]: PreFunctionalCategory]:
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val pfc = summon[PreFunctionalCategory[Arr]]
+
+  import pfc.{YEF}
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+  def pointfreeApplicationProperty[Z, Y]: Fun[Z, Y] => (Z => Law[YEF[U][Y]]) =
+    `z=>y` =>
+      z =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{v2gv, f2a}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        (f2a(`z=>y`) o v2gv(z)) =:
+          (v2gv(`z=>y`(z)))
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def pointfreeYonedaProperty[Z, Y, X]
+      : Arr[Z, Y] => (Arr[Y, X] => Law[YEF[U][Arr[Z, X]]]) =
+    `z-->y` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{v2gv, yef}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        (yef(`y-->x`) o v2gv(`z-->y`)) =:
+          (v2gv(`y-->x` o `z-->y`))
+\end{lstlisting}
+\end{mdframed}   
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class PreFunctionalCategoryProofs[Z, Arr[-_, +_]: PreFunctionalCategory]:
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val pfc = summon[PreFunctionalCategory[Arr]]
+
+  import pfc.{YEF}
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def pointfreeApplicationProof[Z, Y]: Fun[Z, Y] => (Z => Proof[YEF[U][Y]]) =
+    `z=>y` =>
+      z =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{f2a, v2gv}
+\end{lstlisting}
+\end{mdframed}   
+\clearpage 
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+        
+        (f2a(`z=>y`) o v2gv(z)) ==:
+          // definition v2gv
+          (f2a(`z=>y`) o f2a(_ => z)) ==:
+          // functorCompositionLaw for f2a
+          (f2a(`z=>y` o (_ => z))) ==:
+          // definition o for functionCategory
+          (f2a(_ => `z=>y`(z))) ==:
+          // definition v2gv
+          (v2gv(`z=>y`(z))) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def pointfreeYonedaProof[Y, X]
+      : Arr[Z, Y] => (Arr[Y, X] => Proof[YEF[U][Arr[Z, X]]]) =
+    `z-->y` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{yf, yef, v2gv}
+
+        def f2a[__] = pfc.f2a[Arr[__, Y], Arr[__, X]]
+\end{lstlisting}
+\end{mdframed}    
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}        
+        
+        (yef(`y-->x`) o v2gv(`z-->y`)) ==:
+          // definition yef and definition f2a
+          (f2a[Z](yf(`y-->x`)) o v2gv(`z-->y`)) ==:
+          // definition yf
+          f2a[Z](`z-->y` => `y-->x` o `z-->y`) o v2gv(`z-->y`))
+          // pointfreeApplicationProperty and definition f2a
+          (v2gv(`y-->x` o `z-->y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}   
+\ecode
+
+\defn\label{functional category specification}
+The {\em functional category specification}\index{functional category specification} $F\!C$ extends the pre-functional
+category specification. 
+
+It declares
+\blist{$F\!C_{dec}$}
+\item {\em being a triple}\index{functional category specification!triple}, $(\!\YEF_{U},\mu,\eta)$, for $P\!F\!C$.
+\elist
+\edefn
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.specification
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{U}
+
+import plp.implementation.generic.{Yoneda}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+trait FunctionalCategory[Arr[-_, +_]: Category]
+    extends PreFunctionalCategory[Arr]
+    with Triple[Arr, Yoneda[Arr][U]]
+\end{lstlisting}
+\end{mdframed}        
+\ecode
+
+Being a triple $(\!\YEF_{U},\mu,\eta)$ is declared as an {\em object-oriented extension} using 
+{\tt with Triple[Arr, Yoneda[Arr][U]]}\index{functional category specification code!triple}.
+
+\laws\label{functional category laws}
+\blist{$F\!C_{law}$}
+\item $(\!\YEF_{U},\mu,\eta)$ is a triple\index{functional category specification!triple law}.
+\elist
+\elaws
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Law, =:}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionalCategoryLaws[Arr[-_, +_]: FunctionalCategory]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val fc = summon[FunctionalCategory[Arr]]
+
+  import fc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+  def functionalCategoryMuNaturalTransformationLaw[Z, Y]
+      : Arr[Z, Y] => Law[Arr[(YEF[U] O YEF[U])[Z], YEF[U][Y]]] =
+    `z-->y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import fc.{yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (mu o (yef o yef)(`z-->y`)) =:
+        (yef(`z-->y`) o mu)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+def functionalCategoryTripleLeftIdentityLaw[__]: Law[Arr[YEF[U][__], YEF[U][__]]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  import fc.{unit => upsilon, eta, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  (mu o eta) =:
+    (upsilon)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+def functionalCategoryTripleRightIdentityLaw[__]: Law[Arr[YEF[U][__], YEF[U][__]]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  import fc.{unit => upsilon, yef, eta, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  (mu o yef(eta)) =:
+    (upsilon)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+def functionalCategoryTripleAssociativityLaw[__]
+    : Law[Arr[(YEF[U] O YEF[U] O YEF[U])[__], YEF[U][__]]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    import fc.{yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    (mu o mu) =:
+      (mu o yef(mu))
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\props
+The following functional category property holds
+\blist{$\mu_{prop}$}
+\item $\mu \bcirc \vtgv(\arrow{u}{(\arrow{u}{z})}) = \arrow{u}{(\arrow{u}{z})}$
+      ({\em $\mu$ property}\index{functional category specification!$\mu$ property})
+\elist 
+\eprops
+
+\clearpage
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.proposition
+
+import plp.notation.{O, U, Law, =:}
+
+import plp.specification.{FunctionalCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionalCategoryProperties[Z, Arr[-_, +_]: FunctionalCategory]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val fc = summon[FunctionalCategory[Arr]]
+
+  import fc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}  
+
+  def functionalCategoryMuProperty[__]
+      : (YEF[U] O YEF[U])[__] => Law[(YEF[U] O YEF[U])[__]] =
+    `u-->(u-->__)` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import fc.{v2gv, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (mu o v2gv(`u-->(u-->__)`)) =:
+        (`u-->(u-->__)`)
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+
+\code
+Below is a proof.
+
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionalCategoryProoof[Z, Arr[-_, +_]: FunctionalCategory]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+  val fc = summon[FunctionalCategory[Arr]]
+
+  import fc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+  def functionalCategoryMuProof[__]
+      : (YEF[U] O YEF[U])[__] => Proof[(YEF[U] O YEF[U])[__]] =
+    `u-->(u-->__)` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import fc.{unit, v2gv, eta, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+      def upsilon[__] = unit[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+      (mu o v2gv(`u-->(u-->__)`)) ==:
+        // preFunctionalCategoryEtaLaw for YEF[U]
+        (mu o (eta o `u-->(u-->__)`)) ==:
+        // categoryCompositionAssociativityLaw for Arr
+        ((mu o eta) o `u-->(u-->__)`) ==:
+        // tripleLeftIdentityLaw for YEF[U]
+        (`u-->(u-->__)` o upsilon) ==:
+        // definition upsilon
+        (`u-->(u-->__)` o unit) ==:
+        // categoryRightIdentityLaw for Arr
+        (`u-->(u-->__)`) ==:
+        qed
+
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\defn\label{function functional category}
+The {\em function functional category}\index{function functional category}, $\Fun$, defines
+\blist{$\Fun_{def}$}
+\item $\FTA: \functor{\Fun}{\Fun}$ as the {\em identity function}\index{function functional category!functor},
+\item $\mu: \transformation{\YEF_{U} \bcirc \YEF_{U}}{\YEF_{U}}$ as 
+{\em application to u}\index{set functional category!mu}, where $u$ is the unique element of $U$.
+\elist
+\edefn
+
+\code
+Let
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.notation
+
+val u: U = ()
+\end{lstlisting}
+\end{mdframed} 
+
+\clearpage
+
+in
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.implementation.specific
+
+import plp.notation.{O, I, U, u}
+
+import plp.specification.{FunctionalCategory, NaturalTransformation}
+
+import plp.implementation.generic.{
+  identityEndoFunctor,
+  composedFunctor,
+  yonedaEndoFunctor
+}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+given functionFunctionalCategory: FunctionalCategory[Fun] with  
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+  def composition[Z, Y, X]: (Fun[Y, X], Fun[Z, Y]) => Fun[Z, X] =
+    functionCategory.composition
+
+  def unit[Z]: Fun[Z, Z] = functionCategory.unit
+
+  def lift[Z, Y]: Fun[Z, Y] => Fun[I[Z], I[Y]] = identityEndoFunctor.lift
+
+  val muNaturalTransformation
+      : NaturalTransformation[Fun, Fun, YEF[U] O YEF[U], YEF[U]] =
+    new:
+      def transform[__]: Fun[(YEF[U] O YEF[U])[__], YEF[U][__]] =
+        `u-->(u-->__)` => `u-->(u-->__)`(u)
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\code
+Below is a proof
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+import plp.notation.{Proof, ==:, qed}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionFunctionalCategoryProofs:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionPreFunctionalCategoryFunctorCompositionProof[Z, Y, X]
+      : Fun[Z, Y] => (Fun[Y, X] => Proof[Fun[Z, X]]) =
+    `z=>y` =>
+      `y=>x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import functionFunctionalCategory.{f2a}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+        
+        f2a(`y=>x` o `z=>y`) ==:
+          // definition f2a for identityEndoFunctor for Fun
+          (`y=>x` o `z=>y`) ==:
+          // definition f2a for identityEndoFunctor for Fun
+          (f2a(`y=>x`) o f2a(`z=>y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionPreFunctionalCategoryFunctorIdentityProof[__]
+      : Proof[Fun[__, __]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    import functionCategory.{`__-->__`}
+
+    import functionFunctionalCategory.{f2a}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+    
+    f2a(`__-->__`) ==:
+      // definition f2a for identityEndoFunctor for Fun
+      `__-->__` ==:
+      // done
+      qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+  import functionFunctionalCategory.{YEF}
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionPreFunctionalCategoryEtaNaturalTransformationProof[Z, Y]
+      : Fun[Z, Y] => Proof[Fun[I[Z], YEF[U][Y]]] =
+    `z=>y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import functionFunctionalCategory.{o, f2a, v2gv, yf, yef, eta}
+
+      def i[Z, Y]: Fun[Z, Y] => Fun[Z, Y] = identityEndoFunctor.lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+      
+      (yef(`z=>y`) o eta) ==:
+        // definition eta for functionFunctionalCategory
+        (yef(`z=>y`) o f2a(v2gv)) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (yef(`z=>y`) o v2gv) ==:
+        // definition v2gv
+        (yef(`z=>y`) o ((z: Z) => f2a(_ => z))) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (yef(`z=>y`) o ((z: Z) => (_ => z))) ==:
+        // definition yef
+        (f2a(yf(`z=>y`)) o ((z: Z) => (_ => z))) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (yf(`z=>y`) o ((z: Z) => (_ => z))) ==:
+        // definition o for functionCategory
+        ((z: Z) => yf(`z=>y`)(_ => z)) ==:
+        // definition yf
+        ((z: Z) => (`z=>y` o (_ => z))) ==:
+        // definition o for functionCategory
+        ((z: Z) => (_: U) => `z=>y`(z)) ==:
+        // definition definition o for functionCategory (substituting `z=>y`(z) for y)
+        (((y: Y) => (_: U) => y) o (z => `z=>y`(z))) ==:
+        // lambda calculus eta conversion
+        (((y: Y) => ((_: U) => y)) o `z=>y`) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (((y: Y) => f2a(_ => y)) o `z=>y`) ==:
+        // definition v2gv
+        (v2gv o `z=>y`) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (f2a(v2gv) o `z=>y`) ==:
+        // definition eta
+        (eta o `z=>y`) ==:
+        // definition i
+        (eta o i(`z=>y`)) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionFunctionalCategoryMuNaturalTransformationProof[Z, Y]
+      : Fun[Z, Y] => Proof[(YEF[U] O YEF[U])[Z] => YEF[U][Y]] =
+    `z=>y` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import functionFunctionalCategory.{o, f2a, yf, yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+      
+      (yef(`z=>y`) o mu) ==:
+        // definition yef
+        (f2a(yf(`z=>y`)) o mu) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (yf(`z=>y`) o mu) ==:
+        // definition mu for functionFunctionalCategory
+        (yf(`z=>y`) o (_(u))) ==:
+        // definition o for functionCategory
+        (`u=>(u=>z)` => yf(`z=>y`)(`u=>(u=>z)`(u))) ==:
+        // definition yf
+        (`u=>(u=>z)` => (`z=>y` o `u=>(u=>z)`(u))) ==:
+        // eta conversion lambda calculus
+        (
+            (
+                (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) =>
+                  ((u: U) => (`z=>y` o `u=>(u=>z)`(u)))(u)
+              )
+        ) ==:
+        // definition o for functionCategory
+        (((`u=>(u=>y)`: (YEF[U] O YEF[U])[Y]) => `u=>(u=>y)`(u)) o (
+          (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => (u => `z=>y` o `u=>(u=>z)`(u))
+        )) ==:
+        // definition o for functionCategory
+        (((`u=>(u=>y)`: (YEF[U] O YEF[U])[Y]) => `u=>(u=>y)`(u)) o (
+          (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) =>
+            ((`u=>z`: YEF[U][Z]) => `z=>y` o `u=>z`) o (u => `u=>(u=>z)`(u))
+        )) ==:
+        // eta conversion lambda calculus
+        (((`u=>(u=>y)`: (YEF[U] O YEF[U])[Y]) => `u=>(u=>y)`(u)) o (
+          (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) =>
+            ((`u=>z`: YEF[U][Z]) => `z=>y` o `u=>z`) o `u=>(u=>z)`
+        )) ==:
+        // // definition yf
+        (((`u=>(u=>y)`: (YEF[U] O YEF[U])[Y]) => `u=>(u=>y)`(u)) o yf(
+          (`u=>z`: YEF[U][Z]) => `z=>y` o `u=>z`
+        )) ==:
+        // definition yf
+        (((`u=>(u=>y)`: (YEF[U] O YEF[U])[Y]) => `u=>(u=>y)`(u)) o yf(
+          yf(`z=>y`)
+        )) ==:
+        // definition mu for functionFunctionalCategory
+        (mu o yf(yf(`z=>y`))) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (mu o f2a(yf(f2a(yf(`z=>y`))))) ==:
+        // definition yef
+        (mu o yef(yef(`z=>y`))) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionFunctionalCategoryEtaProof[Z]
+      : YEF[U][Z] => Proof[(YEF[U] O YEF[U])[Z]] =
+    `u=>z` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import functionFunctionalCategory.{o, f2a, v2gv, eta}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+      
+      (eta o `u=>z`) ==:
+        // definition eta for functionFunctionalCategory
+        (f2a(v2gv) o `u=>z`) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (v2gv o `u=>z`) ==:
+        // definition v2gv
+        (((z: Z) => f2a(_ => z)) o `u=>z`) ==:
+        // definition f2a for identityEndoFunctor
+        (((z: Z) => ((_: U) => z)) o `u=>z`) ==:
+        // eta conversion lambda calculus
+        (((z: Z) => ((_: U) => z)) o (u => `u=>z`(u))) ==:
+        // definition o for functionCategory
+        (u => ((_: U) => `u=>z`(u))) ==:
+        // eta conversion lambda calculus
+        (_ => `u=>z`) ==:
+        // definition f2a for identityEndoFunctor for Fun
+        (f2a(_ => `u=>z`)) ==:
+        // definition v2gv
+        v2gv(`u=>z`) ==:
+        // done
+        qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+
+  def functionFunctionalCategoryTripleLeftIdentityProof[Z]
+      : Proof[YEF[U][Z] => YEF[U][Z]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    import functionFunctionalCategory.{unit, f2a, v2gv, eta, mu}
+
+    def upsilon[__] = unit[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}     
+    
+    (mu o eta) ==:
+      // definition eta for functionFunctionalCategory
+      (mu o f2a(v2gv)) ==:
+      // definition f2a for identityEndoFunctor for Fun
+      (mu o v2gv) ==:
+      // definition v2gv
+      (mu o (`u=>z` => f2a(_ => `u=>z`))) ==:
+      // definition f2a for identityEndoFunctor for Fun
+      (mu o (`u=>z` => (_ => `u=>z`))) ==:
+      // definition mu for functionFunctionalCategory
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o (`u=>z` =>
+        (_ => `u=>z`)
+      )) ==:
+      // definition o for functionCategory
+      ((`u=>z` => ((_: U) => `u=>z`)(u))) ==:
+      // lambda calculus eta conversion (U has only one value, u)
+      (`u=>z` => `u=>z`) ==:
+      // definition unit for Fun
+      unit ==:
+      // definition upsilon
+      upsilon[YEF[U][Z]] ==:
+      // done
+      qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionFunctionalCategoryTripleRightIdentityProof[Z]
+      : Proof[YEF[U][Z] => YEF[U][Z]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    import functionFunctionalCategory.{unit, f2a, v2gv, yef, yf, eta, mu}
+
+    def upsilon[__] = unit[__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+    
+    (mu o yef(eta)) ==:
+      // definition yef
+      (mu o f2a(yf(eta))) ==:
+      // definition f2a for identityEndoFunctor for Fun
+      (mu o yf(eta)) ==:
+      // definition eta for functionFunctionalCategory
+      (mu o yf(f2a(v2gv))) ==:
+      // definition f2a for identityEndoFunctor for Fun
+      (mu o yf(v2gv)) ==:
+      // definition v2gv
+      (mu o yf(f2a(z => (_ => z)))) ==:
+      // definition f2a for identityEndoFunctor for Fun
+      (mu o yf(z => _ => z)) ==:
+      // definition mu for functionFunctionalCategory
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o yf(z =>
+        (_ => z)
+      )) ==:
+      // definition yf
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o (`u=>z` =>
+        ((z: Z) => ((_: U) => z)) o `u=>z`
+      )) ==:
+      // definition o for functionCategory
+      (`u=>z` => (((z: Z) => ((_: U) => z)) o `u=>z`)(u)) ==:
+      // definition o for functionCategory
+      (`u=>z` => (_ => `u=>z`(u))) ==:
+      // lambda calculus eta conversion (U has only one value, u)
+      (`u=>z` => `u=>z`) ==:
+      // definition unit for Fun
+      unit ==:
+      // definition upsilon
+      upsilon[YEF[U][Z]] ==:
+      // done
+      qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting} 
+  
+  def functionFunctionalCategoryTripleAssociativityProof[Z]
+      : Proof[(YEF[U] O YEF[U] O YEF[U])[Z] => YEF[U][Z]] =
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+    import functionFunctionalCategory.{f2a, yf, yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+    
+    (mu o mu) ==:
+      // definition mu for functionFunctionalCategory
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o (
+        (`u=>(u=>(u=>z))`: (YEF[U] O YEF[U] O YEF[U])[Z]) => `u=>(u=>(u=>z))`(u)
+      )) ==:
+      // definition o for functionCategory
+      (
+          (
+              (`u=>(u=>(u=>z))`: (YEF[U] O YEF[U] O YEF[U])[Z]) =>
+                `u=>(u=>(u=>z))`(u)(u)
+            )
+      ) ==:
+      // definition o for functionCategory
+      (
+          (
+              (`u=>(u=>(u=>z))`: (YEF[U] O YEF[U] O YEF[U])[Z]) =>
+                ((
+                    (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)
+                ) o `u=>(u=>(u=>z))`)(u)
+            )
+      ) ==:
+      // definition o for functionCategory
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o (
+        (`u=>(u=>(u=>z))`: (YEF[U] O YEF[U] O YEF[U])[Z]) =>
+          (
+              (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)
+          ) o `u=>(u=>(u=>z))`
+      )) ==:
+      // definition yf
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o yf(
+        (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)
+      )) ==:
+      // definition f2a for identityEndoFunctor
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o f2a(
+        yf((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u))
+      )) ==:
+      // definition yef
+      (((`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)) o yef(
+        (`u=>(u=>z)`: (YEF[U] O YEF[U])[Z]) => `u=>(u=>z)`(u)
+      )) ==:
+      // definition mu for functionFunctionalCategory
+      (mu o yef(mu)) ==:
+      // done
+      qed
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\section{Yoneda lemmas}\label{sec:lemmas}
+
+\setcounter{subsection}{0}
+
+\subsection{Yoneda lemma for categories}
+
+\lemm\label{Yoneda lemma for categories}
+
+For all categories $C$, nodes $Z$ of $C$ and functors $G$ from $C$ to $\Set$, natural transformations
+$\tau: \YF_{Z} \rightarrow G$ correspond with elements of $G(Z)$. 
+
+On the one hand, if $\tau: \YF_{Z} \rightarrow G$ is a natural transformation, and $gz \in G(Z)$ is defined as
+$\tau(\arrow{z}{z})$, then $\sigma: \YF_{Z} \rightarrow G$, defined as
+$\sigma = \arrow{z}{y} \mapsto g(\arrow{z}{y})(gz)$, is equal to $\tau$. 
+
+On the other hand, if $gz \in G(Z)$, and $\tau: \YF_{Z} \rightarrow G$ is defined as
+$\tau = \arrow{z}{y} \mapsto g(\arrow{z}{y})(gz)$, then $\tau$ is a natural transformation.
+\elemm
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.proposition
+
+import plp.notation.{Law, =:}
+
+import plp.specification.{Category, Functor, NaturalTransformation}
+
+import plp.implementation.specific.{Fun, functionCategory}
+
+import plp.implementation.generic.{Yoneda, yonedaFunctor}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class YonedaLemma[
+    Arr[-_, +_]: Category,
+    Z,
+    G[+_]: [_[+_]] =>> Functor[Arr, Fun, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val c = summon[Category[Arr]]
+
+  def g[Z, Y]: Arr[Z, Y] => Fun[G[Z], G[Y]] =
+    summon[Functor[Arr, Fun, G]].lift[Z, Y]
+
+  type YF = [Z] =>> [__] =>> Yoneda[Arr][Z][__]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def yonedaLemma1[Y]: (
+      NaturalTransformation[Arr, Fun, YF[Z], G] => Law[Fun[YF[Z][Y], G[Y]]]
+  ) =
+    yfz2g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import c.{`__-->__`}
+
+      def `z-->z`[Z] = `__-->__`[Z]
+
+      def tau[__]: Fun[YF[Z][__], G[__]] = yfz2g.transform
+
+      val `g[z]` : G[Z] = tau(`z-->z`)
+
+      val yfz_2_g: NaturalTransformation[Arr, Fun, YF[Z], G] =
+        new:
+          def transform[__]: Fun[YF[Z][__], G[__]] =
+            `z-->__` => g(`z-->__`)(`g[z]`)
+
+      def sigma[__]: Fun[YF[Z][__], G[__]] = yfz_2_g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      tau =:
+        sigma
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def yonedaLemma2[Y, X]: G[Z] => (Arr[Y, X] => (Law[Fun[YF[Z][Y], G[X]]])) =
+    `g[z]` =>
+
+      val yfz2g: NaturalTransformation[Arr, Fun, YF[Z], G] =
+        new:
+          def transform[__]: Fun[YF[Z][__], G[__]] =
+            `z-->__` => g(`z-->__`)(`g[z]`)
+
+      def tau[__]: Fun[YF[Z][__], G[__]] = yfz2g.transform
+
+      val yf: Arr[Y, X] => Fun[YF[Z][Y], YF[Z][X]] = yonedaFunctor.lift
+
+      `y-->x` =>
+        (g(`y-->x`) o tau) =:
+          (tau o yf(`y-->x`))
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class YonedaLemmaProof[
+    Z,
+    Arr[-_, +_]: Category,
+    G[+_]: [_[+_]] =>> Functor[Arr, Fun, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val c = summon[Category[Arr]]
+
+  import c.`__-->__`
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def g[Z, Y]: Arr[Z, Y] => Fun[G[Z], G[Y]] =
+    summon[Functor[Arr, Fun, G]].lift[Z, Y]
+
+  type YF = [Z] =>> [__] =>> Yoneda[Arr][Z][__]
+
+  def yf[Y, X]: Arr[Y, X] => Fun[YF[Z][Y], YF[Z][X]] = yonedaFunctor.lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def yonedaLemma1Proof[Y]
+      : NaturalTransformation[Arr, Fun, YF[Z], G] => (YF[Z][Y] => Proof[G[Y]]) =
+    yfz2g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+      def `z-->z`[Z] = `__-->__`[Z]
+
+      def tau[__]: Fun[YF[Z][__], G[__]] = yfz2g.transform
+
+      val `g[z]` : G[Z] =
+        tau(`z-->z`)
+
+      val yfz_2_g: NaturalTransformation[Arr, Fun, YF[Z], G] =
+        new:
+          def transform[__]: Fun[YF[Z][__], G[__]] =
+            `z-->__` => g(`z-->__`)(`g[z]`)
+
+      def sigma[__]: Fun[YF[Z][__], G[__]] = yfz_2_g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      `z-->y` =>
+        tau(`z-->y`) ==:
+          // rightIdentityLaw for Arr
+          tau(`z-->y` o `z-->z`) ==:
+          // definition yf
+          tau(yf(`z-->y`)(`z-->z`)) ==:
+          // definition o for functionCategory
+          (tau o yf(`z-->y`))(`z-->z`) ==:
+          // naturalTransformationLaw for tau
+          (g(`z-->y`) o tau)(`z-->z`) ==:
+          // definition o for functionCategory
+          g(`z-->y`)(tau(`z-->z`)) ==:
+          // definition `g[z]`
+          g(`z-->y`)(`g[z]`) ==:
+          // definition sigma
+          sigma(`z-->y`) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def yonedaLemma2Proof[Y, X]
+      : G[Z] => (Arr[Y, X] => (YF[Z][Y] => Proof[G[X]])) =
+    `g[z]` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val yfz2g: NaturalTransformation[Arr, Fun, YF[Z], G] =
+          new:
+            def transform[__]: Fun[YF[Z][__], G[__]] =
+              `z-->__` => g(`z-->__`)(`g[z]`)
+
+        def tau[__]: Fun[YF[Z][__], G[__]] = yfz2g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        `z-->y` =>
+          (g(`y-->x`) o tau)(`z-->y`) ==:
+            // definition o for functionCategory
+            g(`y-->x`)(tau(`z-->y`)) ==:
+            // definition tau
+            g(`y-->x`)(g(`z-->y`)(`g[z]`)) ==:
+            // definition o for functionCategory
+            (g(`y-->x`) o g(`z-->y`))(`g[z]`) ==:
+            // compositionLaw for g
+            (g(`y-->x` o `z-->y`))(`g[z]`) ==:
+            // definition yf
+            (g(yf(`y-->x`)(`z-->y`)))(`g[z]`) ==:
+            // definition tau
+            tau(yf(`y-->x`)(`z-->y`)) ==:
+            // definition o for functionCategory
+            (tau o yf(`y-->x`))(`z-->y`) ==:
+            // done
+            qed
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\subsection{Pointfree Yoneda lemma for pre-functional categories}
+
+\lemm\label{Pointfree Yoneda lemma for pre-functional categories}
+
+For all pre-functional categories $P\!F\!C$, nodes $Z$ of $P\!F\!C$, endofunctors $G$ of $P\!F\!C$ and natural
+tranformations $\tau: \YEF_{Z} \rightarrow G$, natural transformations
+$\eta G \bcirc \tau: \YEF_{Z} \rightarrow \YEF_{U} \bcirc G$ correspond with arrows of $(\!\YEF_{U} \bcirc G)(Z)$.
+
+On the one hand, if $\tau: \YEF_{Z} \rightarrow G$ is a natural transformation, and 
+$\arrow{u}{g(z)} \in (\!\YEF_{U} \!\bcirc G)(Z)$ is defined as $\tau \circ \vtgv(\arrow{z}{z})$, then
+$\sigma: \YEF_{Z} \rightarrow \YEF_{U} \!\bcirc G$, defined as
+$\sigma = \fta(\arrow{z}{y} \mapsto g(\arrow{z}{y}) \circ \arrow{u}{g(z)})$, is equal to $\eta G \bcirc \tau$. 
+
+On the other hand, if $\arrow{u}{g(z)} \in (\!\YEF_{U} \!\bcirc G)(Z)$, and
+$\tau: \YEF_{Z} \rightarrow \YEF_{U} \!\bcirc G$ is defined as 
+$\tau = \fta(\arrow{z}{y} \mapsto g(\arrow{z}{y}) \circ \arrow{u}{g(z)})$, then $\tau$ is a natural transformation.
+\elemm
+
+Both statements hold modulo composing with a global arrow $\vtgv(\arrow{z}{y})$.
+
+\clearpage
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.proposition
+
+import plp.notation.{O, U, Law, =:}
+
+import plp.specification.{
+  PreFunctionalCategory,
+  EndoFunctor,
+  NaturalTransformation
+}
+
+import plp.implementation.generic.{composedFunctor, yonedaEndoFunctor}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class PreFunctionalCategoryEndoYonedaLemma[
+    Z,
+    Arr[-_, +_]: PreFunctionalCategory,
+    G[+_]: [G[+_]] =>> EndoFunctor[Arr, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val pfc = summon[PreFunctionalCategory[Arr]]
+
+  import pfc.{YEF}
+
+  def g[Z, Y]: Arr[Z, Y] => Arr[G[Z], G[Y]] = summon[EndoFunctor[Arr, G]].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaLemma1[Y]: NaturalTransformation[Arr, Arr, YEF[Z], G] => Law[
+    Arr[YEF[Z][Y], (YEF[U] O G)[Y]]
+  ] =
+    yefz2g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import pfc.{`__-->__`, v2gv, eta}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `z-->z` = `__-->__`[Z]
+
+      def tau[__]: Arr[YEF[Z][__], G[__]] = yefz2g.transform
+
+      val `u-->g[z]` : (YEF[U] O G)[Z] =
+        tau o v2gv(`z-->z`)
+
+      val yefz_2_g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+        new:
+          def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+            pfc.f2a(`z--> __` => g(`z--> __`) o `u-->g[z]`)
+
+      def sigma[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+        yefz_2_g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      (eta[G[Y]] o tau) =:
+        sigma
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaLemma2[Y, X]
+      : (YEF[U] O G)[Z] => (Arr[Y, X] => Law[Arr[YEF[Z][Y], (YEF[U] O G)[X]]]) =
+    `u-->g[z]` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{yef}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val yefz2g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+          new:
+            def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+              pfc.f2a(`z--> __` => g(`z--> __`) o `u-->g[z]`)
+
+        def tau[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yefz2g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}        
+
+        ((yef o g)(`y-->x`) o tau) =:
+          (tau o yef(`y-->x`))
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class PreFunctionalCategoryEndoYonedaProofs[
+    Z,
+    Arr[-_, +_]: PreFunctionalCategory,
+    G[+_]: [G[+_]] =>> EndoFunctor[Arr, G]
+]:
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val pfc = summon[PreFunctionalCategory[Arr]]
+
+  import pfc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def g[Z, Y]: Arr[Z, Y] => Arr[G[Z], G[Y]] = summon[EndoFunctor[Arr, G]].lift
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaProof1[Y]: NaturalTransformation[Arr, Arr, YEF[Z], G] => (
+      Arr[Z, Y] => Proof[(YEF[U] O YEF[U] O G)[Y]]
+  ) =
+    yefz2g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+  
+      import pfc.{`__-->__`, v2gv, yef, eta}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `z-->z` = `__-->__`[Z]
+
+      def tau[__]: Arr[YEF[Z][__], G[__]] = yefz2g.transform
+
+      val `u-->g[z]` : (YEF[U] O G)[Z] =
+        tau o v2gv(`z-->z`)
+
+      val yefz_2_g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+        new:
+          def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+            pfc.f2a(`z--> __` => g(`z--> __`) o `u-->g[z]`)
+
+      def sigma[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+        yefz_2_g.transform
+
+      def f2a[__] = pfc.f2a[Arr[Z, __], (YEF[U] O G)[__]]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      `z-->y` =>
+        (eta[G[Y]] o tau o v2gv(`z-->y`)) ==:
+          // categoryRightIdentityLaw for Arr
+          (eta o tau o v2gv(`z-->y` o `z-->z`)) ==:
+          // pointfreeYonedaProperty
+          (eta o tau o yef(`z-->y`) o v2gv(`z-->z`)) ==:
+          // naturalTransformationLaw for eta o tau
+          ((yef o g)(`z-->y`) o eta o tau o v2gv(`z-->z`)) ==:
+          // definition `u-->g[z]`
+          ((yef o g)(`z-->y`) o eta o `u-->g[z]`) ==:
+          // preFunctionalCategoryEtaLaw
+          ((yef o g)(`z-->y`) o v2gv(`u-->g[z]`)) ==:
+          // definition o for functionCategory
+          ((yef(g(`z-->y`)) o v2gv(`u-->g[z]`))) ==:
+          // pointfreeYonedaProperty
+          (v2gv(g(`z-->y`) o `u-->g[z]`)) ==:
+          // pointfreeApplicationProperty
+          (f2a[Y](`z--> __` => g(`z--> __`) o `u-->g[z]`) o v2gv(`z-->y`)) ==:
+          // definition sigma
+          (sigma o v2gv(`z-->y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaProof2[Y, X]: (YEF[U] O G)[Z] => (
+      Arr[Y, X] => (Arr[Z, Y] => Proof[(YEF[U] O YEF[U] O G)[X]])
+  ) =
+    `u-->g[z]` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import pfc.{v2gv, yef}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val yefz2g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+          new:
+            def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+              pfc.f2a(`z--> __` => g(`z--> __`) o `u-->g[z]`)
+
+        def tau[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yefz2g.transform
+
+        def f2a[__] = pfc.f2a[Arr[Z, __], (YEF[U] O G)[__]]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        `z-->y` =>
+          ((yef o g)(`y-->x`) o tau o v2gv(`z-->y`)) ==:
+            // definition tau
+            ((yef o g)(`y-->x`) o f2a[Y](`z--> __` =>
+              g(`z--> __`) o `u-->g[z]`
+            ) o v2gv(`z-->y`)) ==:
+            // pointfreeApplicationProperty
+            ((yef o g)(`y-->x`) o v2gv(g(`z-->y`) o `u-->g[z]`)) ==:
+            // definition o for functionCategory
+            (yef(g(`y-->x`)) o v2gv(g(`z-->y`) o `u-->g[z]`)) ==:
+            // pointfreeYonedaProperty
+            v2gv(g(`y-->x`) o g(`z-->y`) o `u-->g[z]`) ==:
+            // functorCompositionLaw for g
+            v2gv(g(`y-->x` o `z-->y`) o `u-->g[z]`) ==:
+            // pointfreeApplicationProperty
+            (f2a[X](`z--> __` => g(`z--> __`) o `u-->g[z]`) o v2gv(
+              `y-->x` o `z-->y`
+            )) ==:
+            // definition tau
+            (tau o v2gv(`y-->x` o `z-->y`)) ==:              
+            // pointfreeYonedaProperty
+            (tau o yef(`y-->x`) o v2gv(`z-->y`)) ==:
+            // done
+            qed 
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\subsection{Pointfree Yoneda lemma for functional categories}
+
+\lemm\label{Pointfree Yoneda lemma for functional categories}
+
+For all functional categories $F\!C$, nodes $Z$ of $F\!C$ and endofunctors $G$ of $F\!C$, natural transformations
+$\tau: \YEF_{Z} \rightarrow \YEF_{U} \bcirc G$ correspond with arrows of $(\!\YEF_{U} \bcirc \YEF_{U} \bcirc G)(Z)$.
+
+On the one hand, if $\tau: \YEF_{Z} \rightarrow \YEF_{U} \bcirc G$ is a natural transformation, and
+$\arrow{u}{(\arrow{u}{g(z)})} \in (\!\YEF_{U} \bcirc \YEF_{U} \bcirc G)(Z)$ is defined as
+$\tau \circ \vtgv(\arrow{z}{z})$, then $\sigma: \YEF_{Z} \rightarrow \YEF_{U} \bcirc G$, defined as
+$\sigma = \mu G \circ \fta(\arrow{z}{y} \mapsto (\y_{u} \bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})})$, is
+equal to $\tau$. 
+
+As a corollary, if $\tau: \YEF_{Z} \rightarrow G$ is a natural transformation, and
+$\arrow{u}{(\arrow{u}{g(z)})} \in (\!\YEF_{U} \bcirc \YEF_{U} \bcirc G)(Z)$ is defined as
+$\eta \circ \tau \circ \vtgv(\arrow{z}{z})$, then $\sigma: \YEF_{Z} \rightarrow \YEF_{U} \bcirc G$, defined as
+$\sigma = \mu G \circ \fta(\arrow{z}{y} \mapsto (\y_{u} \bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})})$, is
+equal to $\eta \bcirc \tau$. 
+
+On the other hand, if $\arrow{u}{(\arrow{u}{g(z)})} \in (\!\YEF_{U} \bcirc \YEF_{U} \bcirc G)(Z)$, and
+$\tau: \YEF_{Z} \rightarrow \YEF_{U} \bcirc G$ is defined as
+$\tau = \mu G \circ \fta(\arrow{z}{y} \mapsto (\y_{u} \bcirc g)(\arrow{z}{y}) \circ \arrow{u}{(\arrow{u}{g(z)})})$, the
+$\tau$ is a natural transformation.
+\elemm
+
+Both statements hold modulo composing with a global arrow $\vtgv(\arrow{z}{y})$.
+
+\clearpage
+
+\code
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+package plp.proposition
+
+import plp.notation.{O, U, Law, =:}
+
+import plp.specification.{
+  FunctionalCategory,
+  EndoFunctor,
+  NaturalTransformation
+}
+
+import plp.implementation.generic.{composedFunctor, yonedaEndoFunctor}
+
+import plp.implementation.specific.{functionCategory}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionalCategoryEndoYonedaLemma[
+    Z,
+    Arr[-_, +_]: FunctionalCategory,
+    G[+_]: [G[+_]] =>> EndoFunctor[Arr, G]
+]:
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val fc = summon[FunctionalCategory[Arr]]
+
+  import fc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def g[Z, Y]: Arr[Z, Y] => Arr[G[Z], G[Y]] = summon[EndoFunctor[Arr, G]].lift
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaLemma1[Y]
+      : NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] => Law[
+        Arr[YEF[Z][Y], (YEF[U] O G)[Y]]
+      ] =
+    yz2yu_o_g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import fc.{`__-->__`, v2gv, yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `z-->z` = `__-->__`[Z]
+
+      def tau[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yz2yu_o_g.transform
+
+      val `u-->(u-->g[z])` : (YEF[U] O YEF[U] O G)[Z] =
+        tau o v2gv(`z-->z`)
+
+      val yz_2_yu_o_g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+        new:
+          def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+            mu o fc.f2a(`z-->__` => (yef o g)(`z-->__`) o `u-->(u-->g[z])`)
+
+      def sigma[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yz_2_yu_o_g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      tau =:
+        sigma
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaLemma2[Y, X]: (YEF[U] O YEF[U] O G)[Z] => (
+      Arr[Y, X] => Law[Arr[YEF[Z][Y], (YEF[U] O G)[X]]]
+  ) =
+    `u-->(u-->g[z])` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import fc.{yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val yz2yu_o_g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+          new:
+            def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+              mu o fc.f2a(`z-->__` => (yef o g)(`z-->__`) o `u-->(u-->g[z])`)
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        def tau[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yz2yu_o_g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        ((yef o g)(`y-->x`) o tau) =:
+          (tau o yef(`y-->x`))
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaLemma1Corollary[Y]
+      : NaturalTransformation[Arr, Arr, YEF[Z], G] => Law[
+        Arr[YEF[Z][Y], (YEF[U] O G)[Y]]
+      ] =
+    yef2g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import fc.{eta}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      def tau[__]: Arr[YEF[Z][__], G[__]] = yef2g.transform
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      endoYonedaLemma1[Y](
+        new {
+          override def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+            eta o tau
+        }
+      )
+\end{lstlisting}
+\end{mdframed}
+\ecode
+
+\code
+Below is a proof.
+
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+import plp.notation.{Proof, ==:, qed}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+class FunctionalCategoryEndoYonedaProof[
+    Z,
+    Arr[-_, +_]: FunctionalCategory,
+    G[+_]: [G[+_]] =>> EndoFunctor[Arr, G]
+]:
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  val fc = summon[FunctionalCategory[Arr]]
+
+  import fc.{YEF}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def g[Z, Y]: Arr[Z, Y] => Arr[G[Z], G[Y]] = summon[EndoFunctor[Arr, G]].lift
+
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaProof1[Y]
+      : NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] => (
+          Arr[Z, Y] => Proof[(YEF[U] O YEF[U] O G)[Y]]
+      ) =
+    yz2yu_o_g =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      import fc.{`__-->__`, v2gv, yef, eta, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      val `z-->z` = `__-->__`[Z]
+
+      def tau[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yz2yu_o_g.transform
+
+      def `u-->(u-->g[z])` : (YEF[U] O YEF[U] O G)[Z] =
+        tau o v2gv(`z-->z`)
+
+      val yz_2_yu_o_g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+        new:
+          def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+            mu o fc.f2a(`z-->__` => (yef o g)(`z-->__`) o `u-->(u-->g[z])`)
+
+      def sigma[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yz_2_yu_o_g.transform
+
+      def f2a[__] = fc.f2a[Arr[Z, __], (YEF[U] O YEF[U] O G)[__]]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+      `z-->y` =>
+        (tau o v2gv(`z-->y`)) ==:
+          // categoryRightIdentityLaw for Arr
+          (tau o v2gv(`z-->y` o `z-->z`)) ==:
+          // pointfreeYonedaProperty
+          (tau o yef(`z-->y`) o v2gv(`z-->z`)) ==:
+          // naturalTransformationLaw for tau
+          ((yef o g)(`z-->y`) o tau o v2gv(`z-->z`)) ==:
+          // definition `u-->(u-->g[z])`
+          ((yef o g)(`z-->y`) o `u-->(u-->g[z])`) ==:
+          // functionalCategoryMuProperty
+          (mu o v2gv((yef o g)((`z-->y`)) o `u-->(u-->g[z])`)) ==:
+          // pointfreeApplicationProperty
+          (mu o f2a[Y](`z-->y` => (yef o g)(`z-->y`) o `u-->(u-->g[z])`) o v2gv(
+            `z-->y`
+          )) ==:
+          // definition sigma
+          (sigma o v2gv(`z-->y`)) ==:
+          // done
+          qed
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+  def endoYonedaProof2[Y, X]: (YEF[U] O YEF[U] O G)[Z] => (
+      Arr[Y, X] => (Arr[Z, Y] => Proof[(YEF[U] O YEF[U] O G)[X]])
+  ) =
+    `u-->(u-->g[z])` =>
+      `y-->x` =>
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        import fc.{v2gv, yef, mu}
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        val yz2yu_o_g: NaturalTransformation[Arr, Arr, YEF[Z], YEF[U] O G] =
+          new:
+            def transform[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] =
+            mu o fc.f2a(`z-->__` => (yef o g)(`z-->__`) o `u-->(u-->g[z])`)
+
+        def tau[__]: Arr[YEF[Z][__], (YEF[U] O G)[__]] = yz2yu_o_g.transform
+
+        def f2a[__] = fc.f2a[Arr[Z, __], (YEF[U] O YEF[U] O G)[__]]
+\end{lstlisting}
+\end{mdframed}
+\vspace{6pt}
+\clearpage
+\begin{mdframed}[backgroundcolor=lightgray!20] 
+\begin{lstlisting}
+
+        `z-->y` =>
+          ((yef o g)(`y-->x`) o tau o v2gv(`z-->y`)) ==:
+            // definition tau
+            ((yef o g)(`y-->x`) o (mu o f2a[Y](`z-->y` =>
+              (yef o g)(`z-->y`) o `u-->(u-->g[z])`
+            )) o v2gv(`z-->y`)) ==:
+            // pointfreeApplicationProperty
+            ((yef o g)(`y-->x`) o (mu o v2gv(
+              (yef o g)(`z-->y`) o `u-->(u-->g[z])`
+            ))) ==:
+            // mu property for (YEF[U], mu, eta)
+            ((yef o g)(`y-->x`) o (yef o g)(`z-->y`) o `u-->(u-->g[z])`) ==:
+            // functorCompositionProperty for yef o g
+            ((yef o g)(`y-->x` o `z-->y`) o `u-->(u-->g[z])`) ==:
+            // functionalCategoryMuProperty
+            (mu o v2gv((yef o g)(`y-->x` o `z-->y`) o `u-->(u-->g[z])`)) ==:
+            // pointfreeApplicationProperty
+            (mu o f2a[X](`z-->x` =>
+              (yef o g)(`z-->x`) o `u-->(u-->g[z])`
+            ) o v2gv(`y-->x` o `z-->y`)) ==:
+            // definition tau
+            (tau o v2gv(`y-->x` o `z-->y`)) ==:
+            // pointfreeYonedaProperty
+            (tau o yef(`y-->x`) o v2gv(`z-->y`)) ==:
+            qed
+\end{lstlisting}
+\end{mdframed}    
+\ecode
+
+\printindex
+
+\begin{thebibliography}{1}
+
+\bibitem{book:BarrWells}
+M.~Barr and Ch. Wells, \emph{Category theory for computing science}, 2nd~ed.\hskip 1em plus
+0.5em minus 0.4em\relax Prentice-Hall International Series in Computer Science, 1999.
+
+\bibitem{book:MacLaneSaunders}
+Mac Lane, Saunders, \emph{Categories for the Working Mathematician}, vol-5, 2nd~ed.\hskip 1em plus
+0.5em minus 0.4em\relax Springer-Verlag, 1998.
+
+\bibitem{book:Pierce}
+Benjamin C. Pierce, \emph{Types and Programming Languages}.\hskip 1em plus
+0.5em minus 0.4em\relax MIT Press, 2002.
+
+\bibitem{book:Haskell}
+Simon Peyton Jones, \emph{Haskell 98 language and libraries: the Revised Report}.\hskip 1em plus
+0.5em minus 0.4em\relax Cambridge University Press, 2003.
+
+\bibitem{book:Scala}
+Martin Odersky, Lex Spoon, Bill Venners, and Frank Sommers, \emph{Programming in Scala}, 5th~ed.\hskip 1em plus
+0.5em minus 0.4em\relax Artima, 2021.
+    
+\end{thebibliography}
+
+\end{document}
+
